@@ -7,3 +7,7 @@ dependencies:
   - python=3.12
   - pytorch
   - torchvision
+  - matplotlib
+  - tqdm
+  - scikit-learn
+prefix: /opt/homebrew/Caskroom/miniforge/base/envs/optml
