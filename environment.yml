@@ -1,7 +1,9 @@
-name: OptML_project_venv
+name: optml
 channels:
-  - defaults
+  - conda-forge
 dependencies:
-  - python=3.12
   - ipykernel
   - numpy
+  - python=3.12
+  - pytorch
+  - torchvision
