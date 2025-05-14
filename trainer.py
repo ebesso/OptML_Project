@@ -21,13 +21,12 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
         running_loss = 0.0
         
         for inputs, labels in train_loader:
-            print('Input size: ', len(inputs))
             inputs, labels = inputs.to(device), labels.to(device)  # Ensure same device
             optimizer.zero_grad()
             outputs = model(inputs.float())
             loss = criterion(outputs, labels)
             loss.backward()
-            optimizer.step()
+            optimizer.step(model, loss, inputs, labels)
             running_loss += loss.item()
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
