@@ -1,32 +1,25 @@
 import torch
-from torch.optim.optimizer import Optimizer
+from torch.optim import Optimizer
+import random 
 
-class SimpleOptimizer(Optimizer):
-    def __init__(self, params, lr=1e-3):
-        if lr <= 0.0:
-            raise ValueError("Invalid learning rate: {}".format(lr))
-        defaults = dict(lr=lr)
-        super(SimpleOptimizer, self).__init__(params, defaults)
+class RandomOptimizer(Optimizer):
+    def __init__(self, params):
+        super().__init__(params, dict(lr=0.01))
 
     @torch.no_grad()
-    def step(self, closure=None):
-        """Performs a single optimization step.
-
-        Args:
-            closure (callable, optional): A closure that reevaluates the model and returns the loss.
-        """
-        loss = None
-        if closure is not None:
-            with torch.enable_grad():
-                loss = closure()
-
+    def step(self):
         for group in self.param_groups:
-            lr = group['lr']
             for p in group['params']:
-                if p.grad is None:
-                    continue
-                # Basic SGD update
-                d_p = p.grad
-                p.data = p.data - lr * d_p
+                if p.grad is not None:
+                    p.data.add_(-p.grad * random.uniform(0, 1))
 
-        return loss
+class RandomOptimizer(Optimizer):
+    def __init__(self, params):
+        super().__init__(params, dict(lr=0.01))
+
+    @torch.no_grad()
+    def step(self):
+        for group in self.param_groups:
+            for p in group['params']:
+                if p.grad is not None:
+                    p.data.add_(-p.grad * random.uniform(0, 0.1))
