@@ -21,13 +21,15 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
         running_loss = 0.0
         
         for inputs, labels in train_loader:
-            inputs, labels = inputs.to(device), labels.to(device)  # Ensure same device
-            optimizer.zero_grad()
-            outputs = model(inputs.float())
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step(model, loss, inputs, labels)
-            running_loss += loss.item()
+            inputs, labels = inputs.to(device), labels.to(device)
+            loss = optimizer.step(model, inputs, labels)
+            # optimizer.zero_grad()
+            # outputs = model(inputs)
+            # loss = criterion(outputs, labels)
+            # loss.backward()
+            # optimizer.step()
+            # loss = loss.item()
+            running_loss += loss
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
         
@@ -52,14 +54,15 @@ def validate(model, val_loader, criterion, device):
     running_loss = 0.0
     correct = 0
     total = 0
-    
-    for inputs, labels in val_loader:
-        inputs, labels = inputs.to(device), labels.to(device)  # Ensure same device
-        outputs = model(inputs)
-        loss = criterion(outputs, labels)
-        running_loss += loss.item()
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
+
+    with torch.no_grad(): 
+        for inputs, labels in val_loader:
+            inputs, labels = inputs.to(device), labels.to(device) 
+            outputs = model(inputs)
+            loss = criterion(outputs, labels)
+            running_loss += loss.item()
+            _, predicted = torch.max(outputs.data, 1)
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
     
     print(f"Validation Loss: {running_loss/len(val_loader):.4f}, Accuracy: {100 * correct / total:.2f}%")

@@ -1,6 +1,5 @@
 import torch
-from torch.optim import Optimizer, SGD
-import random 
+from torch.optim import Optimizer 
 
 class LineSearchOptimizer(Optimizer):
     def __init__(self, params, loss_fn, gamma, theta, alpha_max, j_0, delta, max_iterations):
@@ -31,8 +30,13 @@ class LineSearchOptimizer(Optimizer):
     def is_reliable_step(self, grad_norm_sq):
         return self.alpha * grad_norm_sq >= self.delta_sq
 
-    @torch.no_grad()
-    def step(self, model, loss, batch_inputs, batch_labels):
+    def step(self, model, batch_inputs, batch_labels):
+
+        model.zero_grad()
+
+        loss = self.loss_fn(model(batch_inputs), batch_labels)
+        loss.backward()
+
         orig_params = [p.detach().clone() for p in model.parameters()]
 
         def set_params(new_params):
@@ -47,19 +51,20 @@ class LineSearchOptimizer(Optimizer):
         for _ in range(self.max_iterations):
             new_params = [p - self.alpha * g for p, g in zip(orig_params, grad)]
             set_params(new_params)
-            new_loss = self.loss_fn(model(batch_inputs), batch_labels).item()
+
+            with torch.no_grad():
+                new_loss = self.loss_fn(model(batch_inputs), batch_labels).item()
             
-            if self.is_successful_step(new_loss, loss, grad_norm_sq):
+            if self.is_successful_step(new_loss, loss.item(), grad_norm_sq):
                 if self.is_reliable_step(grad_norm_sq):
                     self.delta_sq = self.gamma * self.delta_sq
                 else:
                     self.delta_sq = 1 / self.gamma * self.delta_sq
                 
                 self.alpha = min(self.alpha_max, self.gamma * self.alpha)
-                
                 break
             else:
-                set_params(orig_params)
-
                 self.alpha = self.alpha / self.gamma
                 self.delta_sq = self.delta_sq / self.gamma
+
+        return loss
