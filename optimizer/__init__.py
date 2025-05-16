@@ -1,1 +1,1 @@
-from .sls_optimizer import SlsOptimizer
+from .sls_optimizer import SlsOptimizer, SlsOptimizerTemp

@@ -22,13 +22,24 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
         
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
+
+            def closure(backward=False):
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                if backward:
+                    loss.backward()
+                return loss
+            loss = optimizer.step(closure)
+
             loss = optimizer.step(model, inputs, labels)
-            # optimizer.zero_grad()
-            # outputs = model(inputs)
-            # loss = criterion(outputs, labels)
-            # loss.backward()
-            # optimizer.step()
-            # loss = loss.item()
+            
+            #optimizer.zero_grad()
+            #outputs = model(inputs)
+            #loss = criterion(outputs, labels)
+            #loss.backward()
+            #optimizer.step()
+            #loss = loss.item()
             running_loss += loss
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")

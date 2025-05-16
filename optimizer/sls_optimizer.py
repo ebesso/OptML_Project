@@ -1,5 +1,6 @@
 import torch
 from torch.optim import Optimizer 
+from . import utils as ut
 
 class SlsOptimizer(Optimizer):
     def __init__(self, params, loss_fn, gamma, theta, alpha_max, j_0, delta, max_iterations):
@@ -67,4 +68,124 @@ class SlsOptimizer(Optimizer):
                 self.alpha = self.alpha / self.gamma
                 self.delta_sq = self.delta_sq / self.gamma
 
+        return loss
+    
+class SlsOptimizerTemp(Optimizer):
+    def __init__(self, 
+                 params, 
+                 initial_step_size=1, 
+                 line_search_fn="armijo", 
+                 max_iterations=100,
+                 n_batches_per_epoch=500,
+                 c=0.1,
+                 beta_b=0.9,
+                 beta_f=2,
+                 gamma=2,
+                 max_step_size=10,
+                 reset_option=2):
+        
+        defaults = dict(initial_step_size=initial_step_size,
+                        max_iterations=max_iterations,
+                        line_search_fn=line_search_fn,
+                        n_batches_per_epoch=n_batches_per_epoch,
+                        c=c,
+                        beta_b=beta_b,
+                        beta_f=beta_f,
+                        gamma=gamma,
+                        max_step_size=max_step_size,
+                        reset_option=reset_option)
+        super().__init__(params, defaults)
+
+        self.state["step_size"] = initial_step_size
+
+        self.state["function_evaluations"] = 0
+        self.state["gradient_evaluations"] = 0
+        
+
+
+    def step(self, closure=None):
+        ''' closure should be like this
+        def closure():
+            optimizer.zero_grad()
+            output = model(input)
+            loss = loss_fn(output, target)
+            return loss'''
+        
+        if closure is None:
+            raise ValueError("Closure function is required for SLS optimizer")
+
+        # calculate loss
+        loss = closure()
+        self.state["function_evaluations"] += 1
+
+        # calculate gradient
+        loss.backward()
+        self.state["gradient_evaluations"] += 1
+
+        for group in self.param_groups:
+            params = group["params"]
+
+            orig_params = [p.detach().clone() for p in params]
+            grad = [p.grad.detach().clone() for p in params]
+            grad_flat = torch.cat([g.view(-1) for g in grad])
+            grad_norm_sq = grad_flat.norm()**2
+
+            def set_params(old_params, new_params):
+                with torch.no_grad():
+                    for p, new_p in zip(old_params, new_params):
+                        p.copy_(new_p)
+            
+            step_size = self.state["step_size"]
+            
+            with torch.no_grad():
+                if grad_norm_sq >= 1e-16:
+                    # Reset the step size
+                    step_size = ut.reset_step(step_size=self.state["step_size"],
+                                              max_step_size=group["max_step_size"], 
+                                              gamma=group["gamma"],
+                                              reset_option=group["reset_option"], 
+                                              n_batches_per_epoch=group["n_batches_per_epoch"],
+                                              beta_f=group["beta_f"])
+                    
+                    found = 0
+
+                    # Perform the line search
+                    for _ in range(group['max_iterations']):
+                        new_params = [p - step_size * g for p, g in zip(orig_params, grad)]
+                        set_params(params, new_params)
+                        
+                        # Calculate new loss
+                        new_loss = closure()
+                        self.state["function_evaluations"] += 1
+
+                        # Check the Armijo condition
+                        if group["line_search_fn"] == "armijo":
+                            found, step_size = ut.check_armijo_condition(loss_new=new_loss.item(), 
+                                                                         loss_old=loss.item(), 
+                                                                         step_size=step_size, 
+                                                                         grad_norm_sq=grad_norm_sq, 
+                                                                         c=group["c"], 
+                                                                         beta_b=group["beta_b"])
+                            if found == 1:
+                                break
+                        elif group["line_search_fn"] == "goldstein":
+                            found, step_size = ut.check_goldstein_condition(loss_new=new_loss.item(), 
+                                                                           loss_old=loss.item(), 
+                                                                           max_step_size=group["max_step_size"], 
+                                                                           step_size=step_size, 
+                                                                           grad_norm_sq=grad_norm_sq, 
+                                                                           c=group["c"], 
+                                                                           beta_b=group["beta_b"], 
+                                                                           beta_f=group["beta_f"])
+                            if found == 1:
+                                break
+
+                    if found == 0:
+                        # If no step size found, revert to original parameters
+                        set_params(params, orig_params)
+                        
+            self.state["step_size"] = step_size
+
+            
+        # Returns the loss at the start
         return loss
