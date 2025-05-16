@@ -1,7 +1,7 @@
 import torch
 from torch.optim import Optimizer 
 
-class LineSearchOptimizer(Optimizer):
+class SlsOptimizer(Optimizer):
     def __init__(self, params, loss_fn, gamma, theta, alpha_max, j_0, delta, max_iterations):
         self.gamma = gamma
         self.theta = theta
