@@ -89,4 +89,51 @@ def check_goldstein_condition(loss_new, loss_old, max_step_size, step_size, grad
 
     return found, step_size
 
+def copy_parameters(params):
+    """
+    Copy parameters from a list of tensors to a new list of tensors.
 
+    Args:
+        params (list): List of tensors to copy.
+
+    Returns:
+        list: A new list of copied tensors.
+    """
+    return [p.detach().clone() for p in params]
+
+def set_params(target_params, update_params):
+    """
+    Set the parameters of a list of tensors to new values.
+
+    Args:
+        target_params (list): List of tensors to update.
+        update_params (list): List of new values for the tensors.
+    """
+    with torch.no_grad():
+        for p, new_p in zip(target_params, update_params):
+            p.copy_(new_p)
+
+def get_gradient(params):
+    """
+    Get the gradients of a list of tensors.
+
+    Args:
+        params (list): List of tensors to get gradients from.
+
+    Returns:
+        list: A new list of gradients.
+    """
+    return [p.grad.detach().clone() for p in params]
+
+def get_grad_norm_sq(grad):
+    """
+    Get the squared norm of a list of gradients.
+
+    Args:
+        grad (list): List of gradients to get the norm from.
+
+    Returns:
+        float: The norm of the gradients.
+    """
+    grad_flat = torch.cat([g.view(-1) for g in grad])
+    return grad_flat.norm()**2
