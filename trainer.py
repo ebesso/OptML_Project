@@ -16,6 +16,9 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
     Returns:
         Model 
     """
+    loss_history = []
+    step_size_history = []
+
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
@@ -30,9 +33,10 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
                 if backward:
                     loss.backward()
                 return loss
-            loss = optimizer.step(closure)
+            
+            loss, step_size = optimizer.step(closure)
 
-            loss = optimizer.step(model, inputs, labels)
+            #loss = optimizer.step(model, inputs, labels)
             
             #optimizer.zero_grad()
             #outputs = model(inputs)
@@ -41,12 +45,16 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
             #optimizer.step()
             #loss = loss.item()
             running_loss += loss
+            loss_history.append(loss.item())
+            step_size_history.append(step_size)
+
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
         
         validate(model, val_loader, criterion, device)
 
-    return model
+
+    return model, loss_history, step_size_history
 
 def validate(model, val_loader, criterion, device):
     """
