@@ -34,7 +34,7 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
                     loss.backward()
                 return loss
             
-            loss, step_size = optimizer.step(closure)
+            loss = optimizer.step(closure)
 
             #loss = optimizer.step(model, inputs, labels)
             
@@ -46,7 +46,7 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
             #loss = loss.item()
             running_loss += loss
             loss_history.append(loss.item())
-            step_size_history.append(step_size)
+            step_size_history.append(optimizer.state["step_size"])
 
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")

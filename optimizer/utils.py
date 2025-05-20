@@ -35,15 +35,15 @@ def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batc
     else:
         raise ValueError("Invalid reset option")
     
-def check_armijo_condition(loss_new, loss_old, step_size, grad_norm_sq, c, beta_b):
+def check_armijo_condition(f_new, f0, f0_prime, step_size, c, beta_b):
     """
     Check the Armijo condition for a given step size.
 
     Args:
-        loss_new (float): The new loss value.
-        loss_old (float): The old loss value.
+        f_new (float): The new loss value.
+        f0 (float): The old loss value.
+        f0_prime (float): The derivative at the old loss value.
         step_size (float): The step size.
-        grad_norm_sq (float): The squared norm of the gradient.
         c (float): The Armijo condition constant.
         beta_b (float): The decay factor for the step size.
 
@@ -53,23 +53,23 @@ def check_armijo_condition(loss_new, loss_old, step_size, grad_norm_sq, c, beta_
     """
 
     found = 0
-    if loss_new <= loss_old - c * step_size * grad_norm_sq:
+    if f_new <= f0 + c * step_size * f0_prime:
         found = 1
     else:
         step_size *= beta_b
 
     return found, step_size
 
-def check_goldstein_condition(loss_new, loss_old, max_step_size, step_size, grad_norm_sq, c, beta_b, beta_f):
+def check_goldstein_condition(f_new, f0, f0_prime, max_step_size, step_size, c, beta_b, beta_f):
     """
     Check the Goldstein condition for a given step size.
 
     Args:
-        loss_new (float): The new loss value.
-        loss_old (float): The old loss value.
+        f_new (float): The new loss value.
+        f0 (float): The old loss value.
+        f0_prime (float): The derivative at the old loss value.
         max_step_size (float): The max step size.
         step_size (float): The step size.
-        grad_norm_sq (float): The squared norm of the gradient.
         c (float): The Goldstein condition constant.
         beta_b (float): The decay factor for the step size.
         beta_f (float): The increase factor for the step size.
@@ -80,9 +80,9 @@ def check_goldstein_condition(loss_new, loss_old, max_step_size, step_size, grad
     """
 
     found = 0
-    if loss_new > loss_old - c * step_size * grad_norm_sq:
+    if f_new > f0 + c * step_size * f0_prime:
        step_size *= beta_b
-    elif loss_new < loss_old - (1 - c) * step_size * grad_norm_sq:
+    elif f_new < f0 + (1 - c) * step_size * f0_prime:
         step_size = min(beta_f*step_size, max_step_size)
     else:
         found = 1
