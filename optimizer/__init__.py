@@ -1,1 +1,2 @@
-from .sls_optimizer import SlsOptimizer, SlsOptimizerTemp
+from .sls_optimizer import SLSOptimizer 
+from .rdls_optimizer import RDLSOptimizer

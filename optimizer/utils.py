@@ -137,3 +137,21 @@ def get_grad_norm_sq(grad):
     """
     grad_flat = torch.cat([g.view(-1) for g in grad])
     return grad_flat.norm()**2
+
+def get_random_direction(dimensions):
+    direction = np.random.normal(size=dimensions)
+    return direction / np.linalg.norm(direction)
+
+def is_concave(polynomial):
+    return polynomial[0] < 0
+
+def get_polynomial(point1, point2, point3):
+    x0, y0 = point1
+    x1, y1 = point2
+    x2, y2 = point3
+
+    return np.polyfit([x0, x1, x2], [y0, y1, y2], deg=2)
+
+def get_minima(poly):
+    return - poly[1] / (2 * poly[0])
+
