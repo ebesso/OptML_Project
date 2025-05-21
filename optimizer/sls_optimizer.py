@@ -51,12 +51,17 @@ class SLSOptimizer(Optimizer):
 
             orig_params = ut.copy_parameters(params)
             grad = ut.get_gradient(params)
-            grad_norm_sq = ut.get_grad_norm_sq(grad)
+
+            direction = [-g for g in grad]
+
+            # Calculate derivative of line search function at the current point
+            loss_prime0 = sum((d * g).sum() for d, g in zip(direction, grad) if d is not None and g is not None)
+
 
             step_size = self.state["step_size"]
             
             with torch.no_grad():
-                if grad_norm_sq >= 1e-16:
+                if (-loss_prime0 >= 1e-16):
                     # Reset the step size
                     step_size = ut.reset_step(step_size=step_size,
                                               max_step_size=group["max_step_size"], 
@@ -79,10 +84,10 @@ class SLSOptimizer(Optimizer):
 
                         # Check the Armijo condition
                         if group["line_search_fn"] == "armijo":
-                            found, step_size = ut.check_armijo_condition(loss_new=new_loss.item(), 
-                                                                         loss_old=loss.item(), 
+                            found, step_size = ut.check_armijo_condition(f_new=new_loss.item(), 
+                                                                         f0=loss.item(), 
+                                                                         f0_prime=loss_prime0,
                                                                          step_size=step_size, 
-                                                                         grad_norm_sq=grad_norm_sq, 
                                                                          c=group["c"], 
                                                                          beta_b=group["beta_b"])
                             if found == 1:
@@ -90,11 +95,11 @@ class SLSOptimizer(Optimizer):
                         
                         # Check the Goldstein condition
                         elif group["line_search_fn"] == "goldstein":
-                            found, step_size = ut.check_goldstein_condition(loss_new=new_loss.item(), 
-                                                                           loss_old=loss.item(), 
+                            found, step_size = ut.check_goldstein_condition(f_new=new_loss.item(), 
+                                                                           f0=loss.item(), 
+                                                                           f0_prime=loss_prime0,
                                                                            max_step_size=group["max_step_size"], 
                                                                            step_size=step_size, 
-                                                                           grad_norm_sq=grad_norm_sq, 
                                                                            c=group["c"], 
                                                                            beta_b=group["beta_b"], 
                                                                            beta_f=group["beta_f"])
@@ -108,4 +113,4 @@ class SLSOptimizer(Optimizer):
             self.state["step_size"] = step_size
 
         # Returns the loss at the start
-        return loss, step_size
+        return loss
