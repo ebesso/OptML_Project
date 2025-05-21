@@ -138,9 +138,14 @@ def get_grad_norm_sq(grad):
     grad_flat = torch.cat([g.view(-1) for g in grad])
     return grad_flat.norm()**2
 
-def get_random_direction(dimensions):
-    direction = np.random.normal(size=dimensions)
-    return direction / np.linalg.norm(direction)
+def get_random_direction(params):
+    direction = []
+    for p in params:
+        rand = torch.randn_like(p) 
+        direction.append(rand)
+
+    norm = torch.sqrt(sum((d**2).sum() for d in direction))
+    return [d / norm for d in direction]
 
 def is_concave(polynomial):
     return polynomial[0] < 0
@@ -152,6 +157,26 @@ def get_polynomial(point1, point2, point3):
 
     return np.polyfit([x0, x1, x2], [y0, y1, y2], deg=2)
 
-def get_minima(poly):
-    return - poly[1] / (2 * poly[0])
+
+# Find minima on the interval [-max_step_size, max_step_size]
+def get_minima(poly, max_step_size):
+
+    critical_point = - poly[1] / (2 * poly[0])
+
+    evaluate_polynomal = lambda x: sum([p * x ** (len(poly) - i - 1) for i, p in enumerate(poly)])
+
+    if(abs(critical_point) < max_step_size):
+        if evaluate_polynomal(-max_step_size) < min(evaluate_polynomal(critical_point), evaluate_polynomal(max_step_size)):
+            return -max_step_size
+        
+        if evaluate_polynomal(max_step_size) < min(evaluate_polynomal(critical_point), evaluate_polynomal(-max_step_size)):
+            return max_step_size
+        
+        return critical_point
+
+    if evaluate_polynomal(-max_step_size) < evaluate_polynomal(max_step_size):
+        return -max_step_size
+
+    return max_step_size
+
 
