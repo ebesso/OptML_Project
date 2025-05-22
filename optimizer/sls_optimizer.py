@@ -15,6 +15,21 @@ class SLSOptimizer(Optimizer):
                  gamma=2,
                  max_step_size=10,
                  reset_option=2):
+        """
+        Initialize the SLS optimizer.
+        Args:
+            params (iterable): Parameters to optimize or dicts defining parameter groups.
+            initial_step_size (float): Initial step size for the optimizer.
+            line_search_fn (str): Line search function to use ("armijo" or "goldstein").
+            max_iterations (int): Maximum number of iterations for the line search.
+            n_batches_per_epoch (int): Number of batches per epoch.
+            c (float): Constant for the Armijo condition.
+            beta_b (float): Decay factor for the step size in Armijo condition.
+            beta_f (float): Increase factor for the step size in Goldstein condition.
+            gamma (float): Factor for resetting the step size.
+            max_step_size (float): Maximum step size.
+            reset_option (int): Option for resetting the step size.
+        """
         
         defaults = dict(initial_step_size=initial_step_size,
                         max_iterations=max_iterations,
@@ -55,13 +70,12 @@ class SLSOptimizer(Optimizer):
             direction = [-g for g in grad]
 
             # Calculate derivative of line search function at the current point
-            loss_prime0 = sum((d * g).sum() for d, g in zip(direction, grad) if d is not None and g is not None)
-
+            loss_prime = sum((d * g).sum() for d, g in zip(direction, grad) if d is not None and g is not None)
 
             step_size = self.state["step_size"]
             
             with torch.no_grad():
-                if (-loss_prime0 >= 1e-16):
+                if (-loss_prime >= 1e-16):
                     # Reset the step size
                     step_size = ut.reset_step(step_size=step_size,
                                               max_step_size=group["max_step_size"], 
@@ -75,7 +89,7 @@ class SLSOptimizer(Optimizer):
                     # Perform the line search
                     for _ in range(group['max_iterations']):
                         # Update parameters
-                        new_params = [p - step_size * g for p, g in zip(orig_params, grad)]
+                        new_params = [p + step_size * d for p, d in zip(orig_params, direction)]
                         ut.set_params(params, new_params)
                         
                         # Calculate new loss
@@ -86,7 +100,7 @@ class SLSOptimizer(Optimizer):
                         if group["line_search_fn"] == "armijo":
                             found, step_size = ut.check_armijo_condition(f_new=new_loss.item(), 
                                                                          f0=loss.item(), 
-                                                                         f0_prime=loss_prime0,
+                                                                         f0_prime=loss_prime,
                                                                          step_size=step_size, 
                                                                          c=group["c"], 
                                                                          beta_b=group["beta_b"])
@@ -97,7 +111,7 @@ class SLSOptimizer(Optimizer):
                         elif group["line_search_fn"] == "goldstein":
                             found, step_size = ut.check_goldstein_condition(f_new=new_loss.item(), 
                                                                            f0=loss.item(), 
-                                                                           f0_prime=loss_prime0,
+                                                                           f0_prime=loss_prime,
                                                                            max_step_size=group["max_step_size"], 
                                                                            step_size=step_size, 
                                                                            c=group["c"], 
@@ -105,7 +119,8 @@ class SLSOptimizer(Optimizer):
                                                                            beta_f=group["beta_f"])
                             if found == 1:
                                 break
-
+                                
+                    
                     if found == 0:
                         # If no step size found, revert to original parameters
                         ut.set_params(params, orig_params)
