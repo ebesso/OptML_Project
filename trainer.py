@@ -16,26 +16,47 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
     Returns:
         Model 
     """
+    loss_history = []
+    step_size_history = []
+    function_evals = []
+
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
         
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
-            loss = optimizer.step(model, inputs, labels)
-            # optimizer.zero_grad()
-            # outputs = model(inputs)
-            # loss = criterion(outputs, labels)
-            # loss.backward()
-            # optimizer.step()
-            # loss = loss.item()
+
+            def closure(backward=False):
+                optimizer.zero_grad()
+                outputs = model(inputs)
+                loss = criterion(outputs, labels)
+                if backward:
+                    loss.backward()
+                return loss
+            
+            loss = optimizer.step(closure)
+
+            #loss = optimizer.step(model, inputs, labels)
+            
+            #optimizer.zero_grad()
+            #outputs = model(inputs)
+            #loss = criterion(outputs, labels)
+            #loss.backward()
+            #optimizer.step()
+            #loss = loss.item()
             running_loss += loss
+            loss_history.append(loss.item())
+            step_size_history.append(optimizer.state["step_size"])
+            function_evals.append(optimizer.state["function_evaluations"])
+
         
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
         
         validate(model, val_loader, criterion, device)
 
-    return model
+
+    return model, loss_history, step_size_history, function_evals
 
 def validate(model, val_loader, criterion, device):
     """
