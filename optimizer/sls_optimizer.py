@@ -66,8 +66,10 @@ class SLSOptimizer(Optimizer):
 
             orig_params = ut.copy_parameters(params)
             grad = ut.get_gradient(params)
+            grad_norm = ut.get_grad_norm(grad)
 
-            direction = [-g for g in grad]
+            # Normalized direction
+            direction = [-g/grad_norm for g in grad]
 
             # Calculate derivative of line search function at the current point
             loss_prime = sum((d * g).sum() for d, g in zip(direction, grad) if d is not None and g is not None)
@@ -81,49 +83,63 @@ class SLSOptimizer(Optimizer):
                                               max_step_size=group["max_step_size"], 
                                               gamma=group["gamma"],
                                               reset_option=group["reset_option"], 
-                                              n_batches_per_epoch=group["n_batches_per_epoch"],
-                                              beta_f=group["beta_f"])
+                                              n_batches_per_epoch=group["n_batches_per_epoch"])
                     
-                    found = 0
-
-                    # Perform the line search
-                    for _ in range(group['max_iterations']):
+                    found = False
+                    def line_fn(step_size):
                         # Update parameters
-                        new_params = [p + step_size * d for p, d in zip(orig_params, direction)]
-                        ut.set_params(params, new_params)
-                        
-                        # Calculate new loss
-                        new_loss = closure()
-                        self.state["function_evaluations"] += 1
+                        ut.update_parameters(params=params, 
+                                             step_size=step_size, 
+                                             original_params=orig_params, 
+                                             direction=direction)
+                        return closure()
+                    
+                    # Perform armijo line search
+                    if group["line_search_fn"] == "armijo":
+                        found, step_size, func_evals, grad_evals = ut.armijo_line_search(
+                            line_fn=line_fn, 
+                            orig_loss=loss, 
+                            orig_loss_prime=loss_prime, 
+                            step_size=step_size, 
+                            group=group
+                        )
+                        self.state["function_evaluations"] += func_evals
+                        self.state["gradient_evaluations"] += grad_evals
+                    
+                    # Perform goldstein line search
+                    elif group["line_search_fn"] == "goldstein":
+                        found, step_size, func_evals, grad_evals = ut.goldstein_line_search(
+                            line_fn=line_fn, 
+                            orig_loss=loss, 
+                            orig_loss_prime=loss_prime, 
+                            step_size=step_size, 
+                            group=group
+                        )
+                        self.state["function_evaluations"] += func_evals
+                        self.state["gradient_evaluations"] += grad_evals
+                    
+                    # Perform Strong Wolfe line search
+                    elif group["line_search_fn"] == "strong_wolfe":
+                        found, step_size, func_evals, grad_evals = ut.strong_wolfe_line_search(
+                            line_fn=line_fn, 
+                            params=params, 
+                            orig_loss=loss, 
+                            orig_loss_prime=loss_prime, 
+                            step_size=step_size, 
+                            max_step_size=group["max_step_size"], 
+                            direction=direction, 
+                            group=group
+                        )
+                        self.state["function_evaluations"] += func_evals
+                        self.state["gradient_evaluations"] += grad_evals
 
-                        # Check the Armijo condition
-                        if group["line_search_fn"] == "armijo":
-                            found, step_size = ut.check_armijo_condition(f_new=new_loss.item(), 
-                                                                         f0=loss.item(), 
-                                                                         f0_prime=loss_prime,
-                                                                         step_size=step_size, 
-                                                                         c=group["c"], 
-                                                                         beta_b=group["beta_b"])
-                            if found == 1:
-                                break
-                        
-                        # Check the Goldstein condition
-                        elif group["line_search_fn"] == "goldstein":
-                            found, step_size = ut.check_goldstein_condition(f_new=new_loss.item(), 
-                                                                           f0=loss.item(), 
-                                                                           f0_prime=loss_prime,
-                                                                           max_step_size=group["max_step_size"], 
-                                                                           step_size=step_size, 
-                                                                           c=group["c"], 
-                                                                           beta_b=group["beta_b"], 
-                                                                           beta_f=group["beta_f"])
-                            if found == 1:
-                                break
+                    else:
+                        raise ValueError(f"Unknown line search function: {group['line_search_fn']}")
                                 
                     
-                    if found == 0:
+                    if not found:
                         # If no step size found, revert to original parameters
-                        ut.set_params(params, orig_params)
+                        ut.update_parameters(params, 1e-6, orig_params, direction)
                         
             self.state["step_size"] = step_size
 

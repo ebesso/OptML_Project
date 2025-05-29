@@ -37,14 +37,6 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
             
             loss = optimizer.step(closure)
 
-            #loss = optimizer.step(model, inputs, labels)
-            
-            #optimizer.zero_grad()
-            #outputs = model(inputs)
-            #loss = criterion(outputs, labels)
-            #loss.backward()
-            #optimizer.step()
-            #loss = loss.item()
             running_loss += loss
             loss_history.append(loss.item())
             step_size_history.append(optimizer.state["step_size"])
