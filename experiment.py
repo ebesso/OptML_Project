@@ -2,7 +2,7 @@ from torch.utils.tensorboard import SummaryWriter
 from loader import load
 import argparse, time, json
 import torch
-from model import SimpleCNN, TinyCNN
+from model import SimpleCNN, TinyCNN, get_resnet18_for_cifar10
 from optimizer.sls_optimizer import SLSOptimizer
 from optimizer.rdls_optimizer import RDLSOptimizer
 from optimizer.baseline_optimizer import BaseLineOptimizer
@@ -32,7 +32,7 @@ def run(config, writer):
     criterion = torch.nn.CrossEntropyLoss()
 
     # Not pretrained
-    model = resnet18(num_classes=10)
+    model = get_resnet18_for_cifar10()
 
     model.to(device)
 

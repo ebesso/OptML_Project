@@ -6,7 +6,8 @@ def load(batch_size=64, val_split=0.2, seed = 1):
     
     transform = transforms.Compose([
         transforms.ToTensor(),
-        transforms.Normalize((0.5,), (0.5,))
+        transforms.Normalize(mean=[0.4914, 0.4822, 0.4465],
+                         std=[0.2470, 0.2435, 0.2616]),
     ])
     np.random.seed(seed) # Necessary for reproducabiliity
 
