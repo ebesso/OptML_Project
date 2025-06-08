@@ -10,8 +10,8 @@ def load(batch_size=64, val_split=0.2, seed = 1):
     ])
     np.random.seed(seed) # Necessary for reproducabiliity
 
-    full_train_dataset = datasets.FashionMNIST(root='./data', train=True, download=True, transform=transform) 
-    test_dataset = datasets.FashionMNIST(root='./data', train=False, download=True, transform=transform)
+    full_train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=transform) 
+    test_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
 
     indices = np.random.permutation(len(full_train_dataset))
     split = int(np.floor(val_split * len(full_train_dataset)))

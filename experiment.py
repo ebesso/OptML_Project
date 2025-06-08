@@ -8,6 +8,7 @@ from optimizer.rdls_optimizer import RDLSOptimizer
 from optimizer.baseline_optimizer import BaseLineOptimizer
 from trainer import train
 from inferencer import infer
+from torchvision.models import resnet18
 
 
 def load_configuration(config_name):
@@ -21,8 +22,19 @@ def load_configuration(config_name):
 
 def run(config, writer):
     train_loader, val_loader, test_loader = load(batch_size=config["batch_size"])
+
+    # Set device
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    print(f"Using device: {device}") 
+
+
+    
     criterion = torch.nn.CrossEntropyLoss()
-    model = TinyCNN()
+
+    # Not pretrained
+    model = resnet18(num_classes=10)
+
+    model.to(device)
 
     if config['line_search_fn'] == 'golden_section':
         optimizer = RDLSOptimizer(
@@ -57,12 +69,12 @@ def run(config, writer):
         raise ValueError(f"Unsupported line search function: {config['line_search_fn']}")
     
     # Train the model
-    train(model, train_loader, val_loader, optimizer, criterion, 'cpu', config['num_epochs'], writer)    
+    train(model, train_loader, val_loader, optimizer, criterion, device, config['num_epochs'], writer)    
 
     print("Training completed. Evaluating on test set...")
 
     # Evaluate the model on the test set
-    test_loss, test_accuracy = infer(model, test_loader, criterion)
+    test_loss, test_accuracy = infer(model, test_loader, criterion, device)
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
 
     # Log hyperparameters 
