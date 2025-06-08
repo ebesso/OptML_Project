@@ -37,28 +37,7 @@ class RDLSOptimizer(Optimizer):
                 direction = ut.get_random_direction(params)
                 # direction = ut.get_gradient(params)
 
-                if group["line_search_algorithm"] == "quadratic":
-                    alpha = random.uniform(0, 1)
-                    new_params1 = [p + alpha * group['initial_interval'] * d for p, d in zip(orig_params, direction)]
-                    new_params2 = [p - alpha * group['initial_interval'] * d for p, d in zip(orig_params, direction)]
-
-                    ut.set_params(params, new_params1)
-                    loss1 = closure()
-
-                    ut.set_params(params, new_params2)
-                    loss2 = closure()
-
-                    point0, point1, point2 = (0, loss), (group['initial_interval'], loss1), (-group['initial_interval'], loss2)
-
-                    poly = ut.get_polynomial(point0, point1, point2)
-
-                    step_size = ut.get_minima(poly, group["max_step_size"])
-
-                    new_params = [p + step_size * d for p, d in zip(orig_params, direction)]
-
-                    ut.set_params(params, new_params)
-
-                elif group["line_search_algorithm"] == "golden":
+                if group["line_search_algorithm"] == "golden":
                     tau = (5**(0.5) - 1) / 2
 
                     a, b = -group["initial_interval"], group["initial_interval"]
@@ -101,7 +80,6 @@ class RDLSOptimizer(Optimizer):
                     new_loss = closure()
 
                     if new_loss > loss:
-                        print("New params are worse :(")
                         ut.set_params(params, orig_params)
                 
         return loss, step_size 
