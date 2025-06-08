@@ -34,8 +34,8 @@ class SLSOptimizer(Optimizer):
             max_iterations (int): Maximum number of iterations for the line search.
             n_batches_per_epoch (int): Number of batches per epoch.
 
-            c1 (float): Constant for the Armijo and Goldstein condition.
-            c2 (float): Constant for Strong Wolfe curvature condition.
+            c1 (float): Constant for the Armijo and Goldstein condition, 0 < c1 < c2, typical [1e-4, 1e-1]
+            c2 (float): Constant for Strong Wolfe curvature condition, c1 < c2 < 1, typical 0.9
 
             beta_b (float): Decay factor for the step size in Armijo condition.
             beta_f (float): Increase factor for the step size in Goldstein condition.            
@@ -149,6 +149,7 @@ class SLSOptimizer(Optimizer):
                 if not found:
                     # If no step size found, revert to original parameters
                     ut.update_parameters(params, 1e-6, orig_params, direction)
+                    #step_size = group["initial_step_size"]
                     
             self.state["step_size"] = step_size
 
