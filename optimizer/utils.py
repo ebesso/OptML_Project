@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batches_per_epoch=None):
+def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batches_per_epoch=None, inital_step_size=1):
     """
     Reset the step size based on the specified reset option.
 
@@ -30,7 +30,9 @@ def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batc
     elif reset_option == 3:
         if gamma is None:
             raise ValueError("gamma must be provided for reset option 3")
-        return step_size * gamma        
+        return step_size * gamma     
+    elif reset_option == 4:
+        return inital_step_size
     else:
         raise ValueError("Invalid reset option")
 
@@ -101,92 +103,113 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
         group (dict): A dictionary containing parameters for the line search.
 
     Returns:
-        tuple: A tuple containing the step size, number of function evaluations, and a boolean indicating success.
+        tuple: A tuple containing a boolean indicating success, the step size, number of function evaluations and number of gradient evalutations.
     """
     ## https://link.springer.com/content/pdf/10.1007/978-0-387-40065-5_3.pdf
+    # function and gradient evalutations
     func_evals = 0
     grad_evals = 0
 
+    # definie function which outputs directional derivative
+    def line_fn_deriv(loss):
+        loss.backward()
+        new_grad = get_gradient(params)
+        return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
+
+    alpha = max(min(step_size, group["max_step_size"]), 0.1)
     alpha_prev = 0
     prev_loss = orig_loss
 
-    alpha = step_size
-    max_step_size = min(group["max_step_size"], step_size * 2)
-
-
-    for _ in range(group['max_iterations']):
+    for j in range(group["max_iterations"]):
         new_loss = line_fn(alpha)
         func_evals += 1
 
-        if new_loss > orig_loss + group["c1"] * alpha * orig_loss_prime or new_loss >= prev_loss:
-            zoom_results = zoom(line_fn, 
-                 params, 
-                 alpha_low = alpha_prev, 
-                 alpha_high = alpha, 
-                 orig_loss = orig_loss, 
-                 orig_loss_prime = orig_loss_prime, 
-                 loss_low = prev_loss, 
-                 direction = direction, 
-                 group = group)
-            found, alpha, new_func_evals, new_grad_evals = zoom_results
-            func_evals += new_func_evals
-            grad_evals += new_grad_evals
-            return found, alpha, func_evals, grad_evals
-                    
-        new_loss.backward()
-        grad_evals += 1
-        new_grad = get_gradient(params)
-        new_loss_prime = sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
+        if (new_loss > orig_loss + group["c1"]*alpha*orig_loss_prime or 
+            (j > 0 and new_loss > prev_loss)):
+            zoom_results = zoom(line_fn=line_fn, 
+                                params=params, 
+                                alpha_lo=alpha_prev, 
+                                loss_lo=prev_loss,
+                                alpha_hi=alpha, 
+                                loss_hi=new_loss, 
+                                orig_loss=orig_loss, 
+                                orig_loss_prime=orig_loss_prime, 
+                                direction=direction, 
+                                group=group)
+            found, step_size, extra_func_evals, extra_grad_evals = zoom_results
+            func_evals += extra_func_evals
+            grad_evals += extra_grad_evals
+            return found, step_size, func_evals, grad_evals
 
-        if abs(new_loss_prime) <= -group["c2"] * orig_loss_prime:
+        new_loss_prime = line_fn_deriv(new_loss)
+        grad_evals += 1
+
+        if abs(new_loss_prime) <= group["c2"]*abs(orig_loss_prime):
             return True, alpha, func_evals, grad_evals
         
         if new_loss_prime >= 0:
-            zoom_results = zoom(line_fn, 
-                 params, 
-                 alpha_low = alpha_prev, 
-                 alpha_high = alpha, 
-                 orig_loss = orig_loss, 
-                 orig_loss_prime = orig_loss_prime, 
-                 loss_low = prev_loss, 
-                 direction = direction, 
-                 group = group)
-            
-            found, alpha, new_func_evals, new_grad_evals = zoom_results
-            func_evals += new_func_evals
-            grad_evals += new_grad_evals
-            return found, alpha, func_evals, grad_evals
-        
+            zoom_results = zoom(line_fn=line_fn, 
+                                params=params, 
+                                alpha_lo=alpha, 
+                                loss_lo=new_loss,
+                                alpha_hi=alpha_prev, 
+                                loss_hi=prev_loss, 
+                                orig_loss=orig_loss, 
+                                orig_loss_prime=orig_loss_prime, 
+                                direction=direction, 
+                                group=group)
+            found, step_size, extra_func_evals, extra_grad_evals = zoom_results
+            func_evals += extra_func_evals
+            grad_evals += extra_grad_evals
+            return found, step_size, func_evals, grad_evals
+
         alpha_prev = alpha
         prev_loss = new_loss
-        alpha = (alpha_prev + max_step_size) / 2
 
+        alpha = (alpha + group["max_step_size"]) / 2 # alpha * group["beta_f"] 
+    
     return False, alpha, func_evals, grad_evals
 
-def zoom(line_fn, params, alpha_low, alpha_high, orig_loss, orig_loss_prime, loss_low, direction, group):
+def zoom(line_fn, params, alpha_lo, loss_lo, alpha_hi, loss_hi, orig_loss, orig_loss_prime, direction, group):
+    # function and gradient evalutations    
     func_evals = 0
     grad_evals = 0
+
+    
+    # definie function which outputs directional derivative
+    def line_fn_deriv(loss):
+        loss.backward()
+        new_grad = get_gradient(params)
+        return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
+
     for _ in range(50):
-        alpha = (alpha_low + alpha_high) / 2
+        # Interpolate (using quadratic, cubic, or bisection) to find a trial step length alpha between alpha_lo and alpha_hi;
+        #cubic (HERE WE REQUIRE loss_hi and possible derivative at alpha_lo and alpha_hi)
+
+        #bisection
+        alpha = (alpha_lo + alpha_hi) / 2
+
         new_loss = line_fn(alpha)
         func_evals += 1
 
-        if new_loss > orig_loss + group["c1"] * alpha * orig_loss_prime or new_loss >= loss_low:
-            alpha_high = alpha
-
-        else:
-            new_loss.backward()
+        if new_loss > orig_loss + group["c1"]*alpha*orig_loss_prime or new_loss >= loss_lo:
+            alpha_hi = alpha
+            loss_hi = new_loss
+        else: 
+            # evalute directional derivative
+            new_loss_prime = line_fn_deriv(new_loss)
             grad_evals += 1
-            new_grad = get_gradient(params)
-            new_loss_prime = sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
-
-            if abs(new_loss_prime) <= -group["c2"] * orig_loss_prime:
-                return True, alpha, func_evals, grad_evals
-            if new_loss_prime * (alpha_high - alpha_low) >= 0:
-                alpha_high = alpha_low
             
-            alpha_low = alpha
-            loss_low = new_loss
+            if abs(new_loss_prime) <= group["c2"]*abs(orig_loss_prime):
+                return True, alpha, func_evals, grad_evals
+            
+            if new_loss_prime*(alpha_hi-alpha_lo) >= 0:
+                alpha_hi = alpha_lo
+                loss_hi = loss_lo
+
+            alpha_lo = alpha
+            loss_lo = new_loss
+    
     return False, alpha, func_evals, grad_evals
 
 def copy_parameters(params):
