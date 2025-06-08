@@ -52,7 +52,7 @@ def armijo_line_search(line_fn, orig_loss, orig_loss_prime, step_size, group):
         new_loss = line_fn(step_size)
         func_evals += 1
 
-        if new_loss <= orig_loss + group["c"]* step_size * orig_loss_prime:
+        if new_loss <= orig_loss + group["c1"]* step_size * orig_loss_prime:
             return True, step_size, func_evals, grad_evals
         else:
             step_size *= group["beta_b"]
@@ -78,16 +78,16 @@ def goldstein_line_search(line_fn, orig_loss, orig_loss_prime, step_size, group)
         new_loss = line_fn(step_size)
         func_evals += 1
 
-        if new_loss > orig_loss + group["c"] * step_size * orig_loss_prime:
+        if new_loss > orig_loss + group["c1"] * step_size * orig_loss_prime:
             step_size *= group["beta_b"]
-        elif new_loss < orig_loss + (1 - group["c"]) * step_size * orig_loss_prime:
+        elif new_loss < orig_loss + (1 - group["c1"]) * step_size * orig_loss_prime:
             step_size = min(group["beta_f"] * step_size, group["max_step_size"])
         else:
             return True, step_size, func_evals, grad_evals
 
     return False, step_size, func_evals, grad_evals
 
-def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_size, max_step_size, direction, group):
+def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_size, direction, group):
     """
     Perform a Strong Wolfe line search to find a suitable step size.
 
@@ -97,7 +97,6 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
         orig_loss (float): The original loss value.
         orig_loss_prime (float): The derivative of the loss at the original point.
         step_size (float): The initial step size.
-        max_step_size (float): The maximum step size.
         direction (list): List of tensors representing the direction to update.
         group (dict): A dictionary containing parameters for the line search.
 
@@ -111,12 +110,15 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
     alpha_prev = 0
     prev_loss = orig_loss
 
-    alpha = (alpha_prev + max_step_size) / 2
+    alpha = step_size
+    max_step_size = min(group["max_step_size"], step_size * 2)
+
 
     for _ in range(group['max_iterations']):
         new_loss = line_fn(alpha)
         func_evals += 1
-        if new_loss > orig_loss + group["c"] * alpha * orig_loss_prime or new_loss >= prev_loss:
+
+        if new_loss > orig_loss + group["c1"] * alpha * orig_loss_prime or new_loss >= prev_loss:
             zoom_results = zoom(line_fn, 
                  params, 
                  alpha_low = alpha_prev, 
@@ -126,19 +128,18 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
                  loss_low = prev_loss, 
                  direction = direction, 
                  group = group)
-            step_size, new_func_evals, new_grad_evals = zoom_results
+            found, alpha, new_func_evals, new_grad_evals = zoom_results
             func_evals += new_func_evals
             grad_evals += new_grad_evals
-            return True, step_size, func_evals, grad_evals
+            return found, alpha, func_evals, grad_evals
                     
-        
         new_loss.backward()
         grad_evals += 1
         new_grad = get_gradient(params)
-        new_loss_prime = sum((d * g).sum() for d, g in zip(direction, new_grad) if d is not None and g is not None)
+        new_loss_prime = sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
 
-        if abs(new_loss_prime) <= -0.9 * orig_loss_prime:
-            return step_size, func_evals, grad_evals, True
+        if abs(new_loss_prime) <= -group["c2"] * orig_loss_prime:
+            return True, alpha, func_evals, grad_evals
         
         if new_loss_prime >= 0:
             zoom_results = zoom(line_fn, 
@@ -150,93 +151,43 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
                  loss_low = prev_loss, 
                  direction = direction, 
                  group = group)
-            step_size, new_func_evals, new_grad_evals = zoom_results
+            
+            found, alpha, new_func_evals, new_grad_evals = zoom_results
             func_evals += new_func_evals
             grad_evals += new_grad_evals
-            return True, step_size, func_evals, grad_evals
+            return found, alpha, func_evals, grad_evals
         
+        alpha_prev = alpha
         prev_loss = new_loss
-        step_size = (step_size + group["max_step_size"]) / 2
-    return False, step_size, func_evals, grad_evals
+        alpha = (alpha_prev + max_step_size) / 2
+
+    return False, alpha, func_evals, grad_evals
 
 def zoom(line_fn, params, alpha_low, alpha_high, orig_loss, orig_loss_prime, loss_low, direction, group):
     func_evals = 0
     grad_evals = 0
-    while True:
+    for _ in range(50):
         alpha = (alpha_low + alpha_high) / 2
         new_loss = line_fn(alpha)
         func_evals += 1
 
-        if new_loss > orig_loss + group["c"] * alpha * orig_loss_prime or new_loss >= loss_low:
+        if new_loss > orig_loss + group["c1"] * alpha * orig_loss_prime or new_loss >= loss_low:
             alpha_high = alpha
+
         else:
             new_loss.backward()
             grad_evals += 1
             new_grad = get_gradient(params)
-            new_loss_prime = sum((d * g).sum() for d, g in zip(direction, new_grad) if d is not None and g is not None)
+            new_loss_prime = sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
 
-            if abs(new_loss_prime) <= -0.9 * orig_loss_prime:
-                return alpha, func_evals, grad_evals
+            if abs(new_loss_prime) <= -group["c2"] * orig_loss_prime:
+                return True, alpha, func_evals, grad_evals
             if new_loss_prime * (alpha_high - alpha_low) >= 0:
                 alpha_high = alpha_low
             
             alpha_low = alpha
             loss_low = new_loss
-
-
-def check_armijo_condition(f_new, f0, f0_prime, step_size, c, beta_b):
-    """
-    Check the Armijo condition for a given step size.
-
-    Args:
-        f_new (float): The new loss value.
-        f0 (float): The old loss value.
-        f0_prime (float): The derivative at the old loss value.
-        step_size (float): The step size.
-        c (float): The Armijo condition constant.
-        beta_b (float): The decay factor for the step size.
-
-    Returns:
-        found (int): 1 if the condition is satisfied, 0 otherwise.
-        step_size (float): The updated step size.
-    """
-
-    found = 0
-    if f_new <= f0 + c * step_size * f0_prime:
-        found = 1
-    else:
-        step_size *= beta_b
-
-    return found, step_size
-
-def check_goldstein_condition(f_new, f0, f0_prime, max_step_size, step_size, c, beta_b, beta_f):
-    """
-    Check the Goldstein condition for a given step size.
-
-    Args:
-        f_new (float): The new loss value.
-        f0 (float): The old loss value.
-        f0_prime (float): The derivative at the old loss value.
-        max_step_size (float): The max step size.
-        step_size (float): The step size.
-        c (float): The Goldstein condition constant.
-        beta_b (float): The decay factor for the step size.
-        beta_f (float): The increase factor for the step size.
-
-    Returns:
-        found (int): 1 if the condition is satisfied, 0 otherwise.
-        step_size (float): The updated step size.
-    """
-
-    found = 0
-    if f_new > f0 + c * step_size * f0_prime:
-       step_size *= beta_b
-    elif f_new < f0 + (1 - c) * step_size * f0_prime:
-        step_size = min(beta_f*step_size, max_step_size)
-    else:
-        found = 1
-
-    return found, step_size
+    return False, alpha, func_evals, grad_evals
 
 def copy_parameters(params):
     """
@@ -253,14 +204,16 @@ def copy_parameters(params):
 def update_parameters(params, step_size, original_params, direction):
     """
     Update parameters by adding a scaled direction to the original parameters.
+    
     Args:
         params (list): List of tensors to update.
         step_size (float): The step size to scale the direction.
         original_params (list): List of original tensors to use as base.
-        direction (list): List of tensors representing the direction to update.
+        direction (list): List of tensors representing the direction to update. If an entry in `direction` is `None`, the corresponding parameter will not be updated.
     """
     for p_next, p_orig, d in zip(params, original_params, direction):
-        p_next.data = p_orig + step_size * d
+        if d is not None:
+            p_next.data = p_orig + step_size * d
 
 def set_params(target_params, update_params):
     """
@@ -282,9 +235,9 @@ def get_gradient(params):
         params (list): List of tensors to get gradients from.
 
     Returns:
-        list: A new list of gradients.
+        list: A new list of gradients. If a tensor does not have a gradient (`p.grad is None`), `None` will be returned for that tensor.
     """
-    return [p.grad.detach().clone() for p in params]
+    return [p.grad.detach().clone() if p.grad is not None else None for p in params]
 
 def get_grad_norm(grad):
     """
@@ -296,8 +249,7 @@ def get_grad_norm(grad):
     Returns:
         float: The norm of the gradients.
     """
-    grad_flat = torch.cat([g.view(-1) for g in grad])
-    return grad_flat.norm()
+    return torch.norm(torch.cat([g.view(-1) for g in grad if g is not None]))
 
 def get_random_direction(params):
     direction = []
