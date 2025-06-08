@@ -1,6 +1,6 @@
 import torch 
 
-def test(model, test_loader, criterion):
+def infer(model, test_loader, criterion):
     """
     Test the model with the given parameters.
     

@@ -1,6 +1,7 @@
 import torch
+from tqdm import tqdm
 
-def train(model, train_loader, val_loader, optimizer, criterion, device, num_epochs):
+def train(model, train_loader, val_loader, optimizer, criterion, device, num_epochs, writer):
     """
     Train the model with the given parameters.
     
@@ -16,15 +17,15 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
     Returns:
         Model 
     """
-    loss_history = []
-    step_size_history = []
-    function_evals = []
 
     for epoch in range(num_epochs):
         model.train()
         running_loss = 0.0
+        accumulated_step_size = 0.0
+
+        progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch", leave=False)
         
-        for inputs, labels in train_loader:
+        for batch_idx, (inputs, labels) in enumerate(progress_bar):
             inputs, labels = inputs.to(device), labels.to(device)
 
             def closure(backward=False):
@@ -36,19 +37,30 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
                 return loss
             
             loss = optimizer.step(closure)
+            accumulated_step_size += optimizer.state["step_size"]
 
             running_loss += loss
-            loss_history.append(loss.item())
-            step_size_history.append(optimizer.state["step_size"])
-            function_evals.append(optimizer.state["function_evaluations"])
 
-        
+            writer.add_scalar('Average Loss/Train', loss, epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Step Size', optimizer.state["step_size"], epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Average Step Size', accumulated_step_size / (batch_idx + 1), epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Accumulated Function Evaluations', optimizer.state["function_evaluations"], epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Accumulated Gradient Evaluations', optimizer.state["gradient_evaluations"], epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Average Function Evaluations', optimizer.state["function_evaluations"] / (epoch*len(train_loader) + batch_idx + 1), epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Average Gradient Evaluations', optimizer.state["gradient_evaluations"] / (epoch*len(train_loader) + batch_idx + 1), epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Execution Time', optimizer.state["execution_time"], epoch * len(train_loader) + batch_idx)
+            writer.add_scalar('Average Execution Time', optimizer.state["execution_time"] / (epoch*len(train_loader) + batch_idx + 1), epoch * len(train_loader) + batch_idx)
+
+            progress_bar.set_postfix(loss=loss.item())
+       
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
         
-        validate(model, val_loader, criterion, device)
+        validation_loss, accuracy = validate(model, val_loader, criterion, device)
 
+        writer.add_scalar('Loss/Validation', validation_loss, epoch)
+        writer.add_scalar('Accuracy/Validation', accuracy, epoch)
 
-    return model, loss_history, step_size_history, function_evals
+        print(f"Validation Loss: {validation_loss:.4f}, Accuracy: {accuracy:.2f}%")
 
 def validate(model, val_loader, criterion, device):
     """
@@ -77,5 +89,7 @@ def validate(model, val_loader, criterion, device):
             _, predicted = torch.max(outputs.data, 1)
             total += labels.size(0)
             correct += (predicted == labels).sum().item()
-    
-    print(f"Validation Loss: {running_loss/len(val_loader):.4f}, Accuracy: {100 * correct / total:.2f}%")
+
+
+    return running_loss / len(val_loader), 100 * correct / total
+

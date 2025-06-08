@@ -1,6 +1,7 @@
 import torch
 from torch.optim import Optimizer 
 from . import utils as ut
+import time
     
 class SLSOptimizer(Optimizer):
     def __init__(self, 
@@ -59,7 +60,10 @@ class SLSOptimizer(Optimizer):
         self.state["function_evaluations"] = 0
         self.state["gradient_evaluations"] = 0
 
+        self.state["execution_time"] = 0
+
     def step(self, closure=None):
+        start_time = time.time()
         
         if closure is None:
             raise ValueError("Closure function is required for SLS optimizer")
@@ -153,4 +157,6 @@ class SLSOptimizer(Optimizer):
             self.state["step_size"] = step_size
 
         # Returns the loss at the start
+        end_time = time.time()
+        self.state["execution_time"] = end_time - start_time
         return loss

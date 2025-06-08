@@ -1,0 +1,15 @@
+{
+    "name": "goldstein",
+    "batch_size": 64,
+    "num_epochs": 10,
+    "line_search_fn": "goldstein",
+    "initial_step_size": 1,
+    "max_step_size": 10,
+    "reset_option": 2,
+    "gamma": 2,
+    "max_iterations": 100,
+    "c1": 0.1,
+    "c2": 0.9,
+    "beta_b": 0.9,
+    "beta_f": 2.0
+}
