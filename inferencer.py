@@ -1,6 +1,6 @@
 import torch 
 
-def infer(model, test_loader, criterion):
+def infer(model, test_loader, criterion, device):
     """
     Test the model with the given parameters.
     
@@ -19,6 +19,7 @@ def infer(model, test_loader, criterion):
     
     with torch.no_grad():
         for inputs, labels in test_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs)
             loss = criterion(outputs, labels)
             running_loss += loss.item()

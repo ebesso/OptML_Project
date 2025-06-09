@@ -15,12 +15,6 @@ Empirically investigate line search-based methods for selecting the learning rat
 
 - What variants of line search (Armijo, Wolfe, quadratic fit, etc.) work best in practice?
 
-## Experiments and datasets
-Evaluate performance on MNIST hand written dataset. 
-
-Models: Big model and small model.
-Loss function: Cross-entropy loss.
-
 ### Cases
 Different setups to evaluate (current):
 - Fixed and adaptive learning rate strategies (e.g., SGD, Adam) to compare with
@@ -48,7 +42,6 @@ Line seach methods:
 - Average execution time per step.
 - Generalization to bigger models
 - Average function evaluations per step.
-
 - Training loss vs. iterations and wall-clock time
 - Test accuracy
 - Stability (does it oscillate or explode?)

@@ -1,4 +1,6 @@
 from torch import nn
+import torchvision.models as models
+import torch.nn as nn
 
 class SimpleCNN(nn.Module):
     def __init__(self):
@@ -34,3 +36,13 @@ class TinyCNN(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+def get_resnet18_for_cifar10():
+    model = models.resnet18()
+    
+    # Modify for CIFAR-10 input
+    model.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+    model.maxpool = nn.Identity()  
+    model.fc = nn.Linear(512, 10) 
+    
+    return model
