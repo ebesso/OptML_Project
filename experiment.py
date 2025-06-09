@@ -46,7 +46,7 @@ def run(config, writer):
     elif config['line_search_fn'] == 'armijo' or config['line_search_fn'] == 'strong_wolfe' or config['line_search_fn'] == 'goldstein':
         optimizer = SLSOptimizer(
             model.parameters(),
-            n_batches_per_epoch=len(train_loader) // config["batch_size"],
+            n_batches_per_epoch=len(train_loader),
             line_search_fn=config['line_search_fn'],
             initial_step_size=config['initial_step_size'],
             max_step_size=config['max_step_size'],
@@ -56,7 +56,9 @@ def run(config, writer):
             c1=config['c1'],
             c2=config['c2'],
             beta_b=config['beta_b'],
-            beta_f=config['beta_f'] 
+            beta_f=config['beta_f'],
+            momentum=config["momentum"],
+            nesterov=config["nesterov"]
         )
     # If no line search is specified, use a standard optimizer
     elif config['line_search_fn'] == 'none':
