@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 
-def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batches_per_epoch=None, inital_step_size=1):
+def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batches_per_epoch=None, initial_step_size=1):
     """
     Reset the step size based on the specified reset option.
 
@@ -32,7 +32,7 @@ def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batc
             raise ValueError("gamma must be provided for reset option 3")
         return step_size * gamma     
     elif reset_option == 4:
-        return inital_step_size
+        return initial_step_size
     else:
         raise ValueError("Invalid reset option")
 
@@ -112,9 +112,15 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
 
     # definie function which outputs directional derivative
     def line_fn_deriv(loss):
-        loss.backward()
-        new_grad = get_gradient(params)
-        return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
+    #    loss.backward()
+    #    new_grad = get_gradient(params)
+    #    return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
+        grads = torch.autograd.grad(loss, params, create_graph=False, retain_graph=True, allow_unused=True)
+        return sum(
+            torch.dot(d.view(-1), g.view(-1))
+            for d, g in zip(direction, grads)
+            if d is not None and g is not None
+        )
 
     alpha = max(min(step_size, group["max_step_size"]), 0.1)
     alpha_prev = 0
@@ -178,10 +184,16 @@ def zoom(line_fn, params, alpha_lo, loss_lo, alpha_hi, loss_hi, orig_loss, orig_
     
     # definie function which outputs directional derivative
     def line_fn_deriv(loss):
-        loss.backward()
-        new_grad = get_gradient(params)
-        return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
-
+    #    loss.backward()
+    #    new_grad = get_gradient(params)
+    #    return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
+        grads = torch.autograd.grad(loss, params, create_graph=False, retain_graph=True, allow_unused=True)
+        return sum(
+            torch.dot(d.view(-1), g.view(-1))
+            for d, g in zip(direction, grads)
+            if d is not None and g is not None
+        )
+    
     for _ in range(50):
         # Interpolate (using quadratic, cubic, or bisection) to find a trial step length alpha between alpha_lo and alpha_hi;
         #cubic (HERE WE REQUIRE loss_hi and possible derivative at alpha_lo and alpha_hi)
@@ -286,6 +298,9 @@ def get_random_direction(params):
 def is_concave(polynomial):
     return polynomial[0] < 0
 
+
+
+## NOT USED??
 def get_polynomial(point1, point2, point3):
     x0, y0 = point1
     x1, y1 = point2

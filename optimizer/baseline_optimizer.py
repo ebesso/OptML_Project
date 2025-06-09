@@ -30,7 +30,7 @@ class BaseLineOptimizer(Optimizer):
         for group in self.param_groups:
             grad = ut.get_gradient(group["params"])
             grad_norm = ut.get_grad_norm(grad)
-            direction = [-g/grad_norm for g in grad]
+            direction = [-g for g in grad]
             step_size = group["learning_rate"]
             if grad_norm > 0:
                 for p, d in zip(group["params"], direction):

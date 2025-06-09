@@ -20,7 +20,9 @@ class SLSOptimizer(Optimizer):
                  c2=0.9,
 
                  beta_b=0.9,
-                 beta_f=2):
+                 beta_f=2,
+                 momentum=0,
+                 nesterov=False):
         """
         Initialize the SLS optimizer.
         Args:
@@ -52,7 +54,9 @@ class SLSOptimizer(Optimizer):
                         beta_f=beta_f,
                         gamma=gamma,
                         max_step_size=max_step_size,
-                        reset_option=reset_option)
+                        reset_option=reset_option,
+                        momentum=momentum,
+                        nesterov=nesterov)
         super().__init__(params, defaults)
 
         self.state["step_size"] = initial_step_size
@@ -149,12 +153,46 @@ class SLSOptimizer(Optimizer):
                 else:
                     raise ValueError(f"Unknown line search function: {group['line_search_fn']}")
                             
-                
+
                 if not found:
                     # If no step size found, revert to original parameters
                     ut.update_parameters(params, 1e-6, orig_params, direction)
-                    #step_size = group["initial_step_size"]
+                    for p in params:
+                        state = self.state[p]
+                        if "momentum_buffer" in state:
+                            del state["momentum_buffer"]
                     
+            momentum = group.get("momentum", 0)
+            if momentum != 0:
+                for p, o, d in zip(params, orig_params, direction):
+                    if d is None or p.grad is None:
+                        continue
+                    
+                    state = self.state[p]
+            
+                    if "momentum_buffer" not in state:
+                        buf = torch.clone(d).detach().mul_(step_size)
+                        state["momentum_buffer"] = buf
+                        update = buf
+                    else:
+                        buf = state["momentum_buffer"]
+                        buf.mul_(momentum).add_(step_size, d)
+            
+                        if group.get("nesterov", False):
+                            update = momentum * buf + step_size * d
+                        else:
+                            update = buf
+            
+                        state["momentum_buffer"] = buf
+            
+                    p.data = o.data + update
+            #else:
+            #    for p, d in zip(params, direction):
+            #        if d is None or p.grad is None:
+            #            continue
+            #        p.data = orig_params[params.index(p)].data + step_size * d
+
+            
             self.state["step_size"] = step_size
 
         # Returns the loss at the start
