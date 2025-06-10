@@ -1,12 +1,12 @@
 {
-    "name": "cifar_resnet_strongwolfe",
+    "name": "cifar_resnet34_armijo",
     "batch_size": 256,
     "num_epochs": 50,
     "dataset": "cifar10",
-    "model": "resnet18",
+    "model": "resnet34",
     "optimizer": {
         "name": "sls",
-        "line_search_fn": "strong_wolfe",
+        "line_search_fn": "armijo",
         "initial_step_size": 1,
         "max_step_size": 10,
         "reset_option": 2,

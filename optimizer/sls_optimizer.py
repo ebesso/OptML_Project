@@ -68,6 +68,9 @@ class SLSOptimizer(Optimizer):
 
     def step(self, closure=None):
         start_time = time.time()
+
+        self.state['gradient_evaluations'] = 0
+        self.state['function_evaluations'] = 0
         
         if closure is None:
             raise ValueError("Closure function is required for SLS optimizer")

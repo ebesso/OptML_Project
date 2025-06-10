@@ -28,6 +28,9 @@ class RDLSOptimizer(Optimizer):
     def step(self, closure):
         start_time = time.time()
 
+        self.state['gradient_evaluations'] = 0
+        self.state['function_evaluations'] = 0
+
         if closure is None:
             raise ValueError("Closure function required")
 

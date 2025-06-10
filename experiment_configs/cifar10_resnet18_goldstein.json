@@ -1,5 +1,5 @@
 {
-    "name": "cifar_resnet_goldstein",
+    "name": "cifar_resnet18_goldstein",
     "batch_size": 256,
     "num_epochs": 50,
     "dataset": "cifar10",

@@ -20,8 +20,12 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
 
     for epoch in range(num_epochs):
         model.train()
+
         running_loss = 0.0
         accumulated_step_size = 0.0
+        accumulated_execution_time = 0.0
+        accumulated_gradient_evaluations = 0.0
+        accumulated_function_evaluations = 0.0
 
         progress_bar = tqdm(train_loader, desc=f"Epoch {epoch+1}/{num_epochs}", unit="batch", leave=False)
         
@@ -37,28 +41,32 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
                 return loss
             
             loss = optimizer.step(closure)
+
             accumulated_step_size += optimizer.state["step_size"]
-
             running_loss += loss
+            accumulated_execution_time += optimizer.state["execution_time"]
+            accumulated_function_evaluations += optimizer.state["function_evaluations"]
+            accumulated_gradient_evaluations += optimizer.state["gradient_evaluations"]
 
-            writer.add_scalar('Average Loss/Train', loss, epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Step Size', optimizer.state["step_size"], epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Average Step Size', accumulated_step_size / (batch_idx + 1), epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Accumulated Function Evaluations', optimizer.state["function_evaluations"], epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Accumulated Gradient Evaluations', optimizer.state["gradient_evaluations"], epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Average Function Evaluations', optimizer.state["function_evaluations"] / (epoch*len(train_loader) + batch_idx + 1), epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Average Gradient Evaluations', optimizer.state["gradient_evaluations"] / (epoch*len(train_loader) + batch_idx + 1), epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Execution Time', optimizer.state["execution_time"], epoch * len(train_loader) + batch_idx)
-            writer.add_scalar('Average Execution Time', optimizer.state["execution_time"] / (epoch*len(train_loader) + batch_idx + 1), epoch * len(train_loader) + batch_idx)
+            step = epoch * len(train_loader) + batch_idx
 
-            progress_bar.set_postfix(loss=loss.item())
+            writer.add_scalar('Loss/Train', loss, step)
+            writer.add_scalar('Step Size', optimizer.state["step_size"], step)
+            writer.add_scalar('Function Evaluations', optimizer.state["function_evaluations"], step)
+            writer.add_scalar('Gradient Evaluations', optimizer.state["gradient_evaluations"], step)
+            writer.add_scalar('Execution Time', optimizer.state["execution_time"], step)
        
         print(f"Epoch [{epoch+1}/{num_epochs}], Loss: {running_loss/len(train_loader):.4f}")
         
         validation_loss, accuracy = validate(model, val_loader, criterion, device)
 
-        writer.add_scalar('Loss/Validation', validation_loss, epoch)
-        writer.add_scalar('Accuracy/Validation', accuracy, epoch)
+        writer.add_scalar('Average Step Size', accumulated_step_size / len(train_loader), epoch + 1)
+        writer.add_scalar('Loss/Validation', validation_loss, epoch + 1)
+        writer.add_scalar('Accuracy/Validation', accuracy, epoch + 1)
+        writer.add_scalar('Average Execution Time', accumulated_execution_time / len(train_loader), epoch + 1)
+        writer.add_scalar('Average Train Loss', running_loss / len(train_loader), epoch + 1)
+        writer.add_scalar('Average Function Evaluations', accumulated_function_evaluations / len(train_loader), epoch + 1)
+        writer.add_scalar('Average Gradient Evaluations', accumulated_gradient_evaluations / len(train_loader), epoch + 1)
 
         print(f"Validation Loss: {validation_loss:.4f}, Accuracy: {accuracy:.2f}%")
 
