@@ -101,7 +101,7 @@ def run(config, writer):
 if __name__ == "__main__":
     # Get configuration
     parser = argparse.ArgumentParser(description="Run the experiment with the given configuration.")
-    parser.add_argument("--config", type=list, required=True, help="Configuration name to load.")
+    parser.add_argument("--config", type=str, required=True, help="Configuration name to load.")
     args = parser.parse_args()
 
     experiment_configs = [config.split('.')[0] for config in os.listdir("experiment_configs")]
