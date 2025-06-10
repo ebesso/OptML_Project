@@ -1,4 +1,4 @@
-# Title
+#  Learning Rate for Neural Networks via Line Search
 
 ## Setup
 Using conda the setup the environment can be setup by running the following command in the terminal: 
