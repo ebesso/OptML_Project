@@ -1,0 +1,11 @@
+{
+    "name": "cifar_resnet_baseline",
+    "batch_size": 256,
+    "num_epochs": 50,
+    "dataset": "cifar10",
+    "model": "resnet18",
+    "optimizer": {
+        "name": "baseline",
+        "learning_rate": 0.025
+    }    
+}
