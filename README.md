@@ -21,19 +21,19 @@ The configuration of each experiment is stored in the `experiment_configs/` dire
 To run an experiment:
 
 ```bash
-python experiment.py --config <config_name>
+python run.py --config <config_name>
 ```
 
 The config_name is the filename of the config without `.json`. See example
 
 ```bash
-python experiment.py --config cifar10_resnet18_armijo 
+python run.py --config cifar10_resnet18_armijo 
 ```
 
-To run all experiments use:
+To run all experiments in `experiment_configs/` use:
 
 ```bash
-python experiment.py --config all 
+python run.py --config all 
 ```
 
 The result of the experiments are logged using tensorboard and saved in the `runs/` directory. To launch tensorboard use:
