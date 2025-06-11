@@ -92,7 +92,7 @@ class SLSOptimizer(Optimizer):
             grad_norm = ut.get_grad_norm(grad)
 
             # Normalized direction
-            direction = [-g/grad_norm for g in grad]
+            direction = [-g for g in grad]
 
             # Calculate derivative of line search function at the current point
             loss_prime = sum((d * g).sum() for d, g in zip(direction, grad) if d is not None and g is not None)
