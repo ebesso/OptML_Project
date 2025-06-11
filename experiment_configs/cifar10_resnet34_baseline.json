@@ -6,6 +6,6 @@
     "model": "resnet34",
     "optimizer": {
         "name": "baseline",
-        "learning_rate": 0.025
+        "learning_rate": 0.01
     }    
 }

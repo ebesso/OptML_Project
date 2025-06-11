@@ -10,13 +10,11 @@ class RDLSOptimizer(Optimizer):
             params,
             device,
             initial_interval=1,
-            max_step_size=0.05,
             tolerance=1e-3,
             max_iterations=100):
 
         defaults = dict(
             initial_interval=initial_interval,
-            max_step_size=max_step_size,
             tolerance=tolerance,
             max_iterations=max_iterations
             )

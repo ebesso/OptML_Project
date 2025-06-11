@@ -21,8 +21,7 @@ class SLSOptimizer(Optimizer):
 
                  beta_b=0.9,
                  beta_f=2,
-                 momentum=0.0,
-                 nesterov=False):
+                 momentum=0.0):
         """
         Initialize the SLS optimizer.
         Args:
@@ -55,8 +54,7 @@ class SLSOptimizer(Optimizer):
                         gamma=gamma,
                         max_step_size=max_step_size,
                         reset_option=reset_option,
-                        momentum=momentum,
-                        nesterov=nesterov)
+                        momentum=momentum)
         super().__init__(params, defaults)
 
         self.state["step_size"] = initial_step_size
@@ -67,12 +65,7 @@ class SLSOptimizer(Optimizer):
         self.state["execution_time"] = 0
         
         if momentum > 0:
-            if nesterov:
-                self.state["nesterov_lambda"] = 1.0
-                self.state["nesterov_lambda_prev"] = 0.0
-                self.state["nesterov_tau"] = 1.0
-            else:
-                self.state["prev_params"] = None
+            self.state["prev_params"] = None
 
     def step(self, closure=None):
         start_time = time.time()
@@ -163,43 +156,25 @@ class SLSOptimizer(Optimizer):
                 
                 else:
                     raise ValueError(f"Unknown line search function: {group['line_search_fn']}")
-                            
 
                 if not found:
                     # If no step size found, revert to original parameters
                     ut.update_parameters(params, 1e-6, orig_params, direction)
-                    for p in params:
-                        state = self.state[p]
-                        if "momentum_buffer" in state:
-                            del state["momentum_buffer"]
                     
             momentum = group.get("momentum", 0.0)
-            nesterov = group.get("nesterov", False)
             if momentum > 0:
-                if nesterov:
-                    # Nesterov update: w_k' = w_k - η∇f(w_k)
+                prev_params = self.state.get("prev_params")
+                if prev_params is not None:
+                    # Polyak momentum: w_{k+1} = w_k + alpha*direction + momentum(w_k - w_{k−1})
+                    for p, o, p_prev, d in zip(params, orig_params, prev_params, direction):
+                        if d is None:
+                            continue
 
-                    # τ-based interpolation: w_k+1 = (1 - τ) * w_k' + τ * w_k
-                    tau = self.state["nesterov_tau"]
-                    for p, w in zip(params, orig_params):
-                        p.data = (1 - tau) * p.data + tau * w.data
-
-                    # Update λ, λ_prev, and τ
-                    lambda_prev = self.state["nesterov_lambda_prev"]
-                    lambda_new = (1 + (1 + 4 * lambda_prev ** 2) ** 0.5) / 2
-                    self.state["nesterov_lambda_prev"] = self.state["nesterov_lambda"]
-                    self.state["nesterov_lambda"] = lambda_new
-                    self.state["nesterov_tau"] = (1 - self.state["nesterov_lambda_prev"]) / lambda_new
-                else:
-                    prev_params = self.state.get("prev_params")
-                    if prev_params is not None:
-                        # Polyak momentum: w_k+1 = w_k - η∇f(w_k) + α(w_k - w_{k−1})
-                        for p, o, p_prev, d in zip(params, orig_params, prev_params, direction):
-                            if d is None:
-                                continue
-                            update = momentum * (o.data - p_prev.data)
-                            p.data = p.data + update
-                    self.state["prev_params"] = [p.detach().clone() for p in orig_params]
+                        # we have already moved to w_k + alpha*direction
+                        # need only to add momentum(w_k - w_{k−1})
+                        update = momentum * (o.data - p_prev.data)
+                        p.data = p.data + update
+                self.state["prev_params"] = [p.detach().clone() for p in orig_params]
 
             self.state["step_size"] = step_size
 

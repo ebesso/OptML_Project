@@ -47,7 +47,6 @@ def run(config, writer):
             model.parameters(),
             device=device, 
             initial_interval=optimizer_config['initial_interval'],
-            max_step_size=optimizer_config['max_step_size'],
             tolerance=optimizer_config['tolerance']
         )
     elif optimizer_config['name'] == 'sls':
@@ -64,8 +63,7 @@ def run(config, writer):
             c2=optimizer_config['c2'],
             beta_b=optimizer_config['beta_b'],
             beta_f=optimizer_config['beta_f'],
-            momentum=optimizer_config["momentum"],
-            nesterov=optimizer_config["nesterov"]
+            momentum=optimizer_config["momentum"]
         )
     # If no line search is specified, use a standard optimizer
     elif optimizer_config['name'] == 'baseline':

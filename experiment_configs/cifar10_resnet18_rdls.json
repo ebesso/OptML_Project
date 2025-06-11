@@ -1,6 +1,6 @@
 {
     "name": "cifar_resnet18_rdls",
-    "batch_size": 256,
+    "batch_size": 4096,
     "num_epochs": 50,
     "dataset": "cifar10",
     "model": "resnet18",
@@ -8,7 +8,6 @@
         "name": "rdls",
         "line_search_fn": "golden_section",
         "initial_interval": 1,
-        "max_step_size": 0.05,
         "tolerance": 0.001
     }    
 }
