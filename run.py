@@ -87,7 +87,7 @@ def run(config, writer):
     print(f"Test Loss: {test_loss:.4f}, Test Accuracy: {test_accuracy:.2f}%")
 
     # Log hyperparameters 
-    writer.add_hparams(config, {
+    writer.add_hparams(optimizer_config, {
         'Loss/Test': test_loss,
         'Accuracy/Test': test_accuracy
     })
