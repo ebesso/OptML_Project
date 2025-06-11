@@ -45,6 +45,7 @@ def run(config, writer):
     if optimizer_config['name'] == 'rdls':
         optimizer = RDLSOptimizer(
             model.parameters(),
+            device=device, 
             initial_interval=optimizer_config['initial_interval'],
             max_step_size=optimizer_config['max_step_size'],
             tolerance=optimizer_config['tolerance']

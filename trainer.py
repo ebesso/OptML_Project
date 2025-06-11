@@ -1,5 +1,6 @@
 import torch
 from tqdm import tqdm
+from optimizer.rdls_optimizer import RDLSOptimizer
 
 def train(model, train_loader, val_loader, optimizer, criterion, device, num_epochs, writer):
     """
@@ -39,8 +40,17 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, num_epo
                 if backward:
                     loss.backward()
                 return loss
+
+            def closure_no_grad():
+                with torch.no_grad():
+                    outputs = model(inputs)
+                    loss = criterion(outputs, labels)
+                    return loss
             
-            loss = optimizer.step(closure)
+            if isinstance(optimizer, RDLSOptimizer):
+                loss = optimizer.step(closure_no_grad)
+            else:
+                loss = optimizer.step(closure)
 
             accumulated_step_size += optimizer.state["step_size"]
             running_loss += loss

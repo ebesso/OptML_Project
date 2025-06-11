@@ -250,6 +250,21 @@ def update_parameters(params, step_size, original_params, direction):
         if d is not None:
             p_next.data = p_orig + step_size * d
 
+def update_parameters_no_grad(params, step_size, original_params, direction):
+    """
+    Update parameters by adding a scaled direction to the original parameters.
+    
+    Args:
+        params (list): List of tensors to update.
+        step_size (float): The step size to scale the direction.
+        original_params (list): List of original tensors to use as base.
+        direction (list): List of tensors representing the direction to update. If an entry in `direction` is `None`, the corresponding parameter will not be updated.
+    """
+    with torch.no_grad():
+        for p_next, p_orig, d in zip(params, original_params, direction):
+            if d is not None:
+                p_next.data = p_orig + step_size * d
+
 def set_params(target_params, update_params):
     """
     Set the parameters of a list of tensors to new values.
@@ -287,13 +302,23 @@ def get_grad_norm(grad):
     return torch.norm(torch.cat([g.view(-1) for g in grad if g is not None]))
 
 def get_random_direction(params):
-    direction = []
-    for p in params:
-        rand = torch.randn_like(p) 
-        direction.append(rand)
+    with torch.no_grad():
+        direction = []
+        for p in params:
+            rand = torch.randn_like(p, device='cpu') 
+            direction.append(rand)
 
-    norm = torch.sqrt(sum((d**2).sum() for d in direction))
-    return [d / norm for d in direction]
+        norm = torch.sqrt(sum((d**2).sum() for d in direction))
+        return [d / norm for d in direction]
+
+def update_random_direction(direction):
+    with torch.no_grad():
+        for i in range(len(direction)):
+            rand = torch.randn_like(direction[i])
+            direction[i] = rand
+
+        norm = torch.sqrt(sum((d**2).sum() for d in direction))
+        return [d / norm for d in direction]
 
 def is_concave(polynomial):
     return polynomial[0] < 0

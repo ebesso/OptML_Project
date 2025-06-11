@@ -8,6 +8,7 @@ class RDLSOptimizer(Optimizer):
     def __init__(
             self,
             params,
+            device,
             initial_interval=1,
             max_step_size=0.05,
             tolerance=1e-3,
@@ -26,6 +27,8 @@ class RDLSOptimizer(Optimizer):
         self.state["gradient_evaluations"] = 0
         self.state['step_size'] = 0
         self.state['execution_time'] = 0
+        self.state['device'] = device
+
 
     def step(self, closure):
         start_time = time.time()
@@ -36,7 +39,7 @@ class RDLSOptimizer(Optimizer):
         if closure is None:
             raise ValueError("Closure function required")
 
-        loss = closure(backward=False)
+        loss = closure()
         with torch.no_grad():
             step_size = 0
 
@@ -44,8 +47,8 @@ class RDLSOptimizer(Optimizer):
                 params = group["params"]
 
                 orig_params = ut.copy_parameters(params)
-                direction = ut.get_random_direction(params)
-                # direction = ut.get_gradient(params)
+
+                direction = [d.to(self.state['device']) for d in ut.get_random_direction(params)]
 
                 tau = (5**(0.5) - 1) / 2
 
@@ -57,13 +60,13 @@ class RDLSOptimizer(Optimizer):
                 # params_l = [p + l * d for p, d in zip(orig_params, direction)]
                 # ut.set_params(params, params_l)
 
-                ut.update_parameters(params, l, orig_params, direction)
-                loss_l = closure().item()
+                ut.update_parameters_no_grad(params, l, orig_params, direction)
+                loss_l = closure()
 
-                ut.update_parameters(params, r, orig_params, direction)
+                ut.update_parameters_no_grad(params, r, orig_params, direction)
                 # params_r = [p + r * d for p, d in zip(orig_params, direction)]
                 # ut.set_params(params, params_r)
-                loss_r = closure().item()
+                loss_r = closure()
 
                 j = 0
 
@@ -74,44 +77,39 @@ class RDLSOptimizer(Optimizer):
                         l = r
                         loss_l = loss_r
                         r = a + (b - a) * tau
-                        ut.update_parameters(params, r, orig_params, direction)
+                        ut.update_parameters_no_grad(params, r, orig_params, direction)
                         # params_r = [p + r*d for p, d in zip(orig_params, direction)]
                         # ut.set_params(params, params_r)
-                        loss_r = closure().item()
+                        loss_r = closure()
                         self.state['function_evaluations'] += 1
                     else:
                         b = r
                         r = l
                         loss_r = loss_l
                         l = b - (b - a) * tau
-                        ut.update_parameters(params, l, orig_params, direction)
+                        ut.update_parameters_no_grad(params, l, orig_params, direction)
                         # ut.set_params(params, params_l)
                         # params_l = [p + l*d for p, d in zip(orig_params, direction)]
-                        loss_l = closure().item()
+                        loss_l = closure()
                         self.state['function_evaluations'] += 1
 
                 step_size = (b + a) / 2
                 self.state['step_size'] = step_size
 
-                ut.update_parameters(params, step_size, orig_params, direction)
-
-                # final_params = [p + step_size * d for p, d in zip(orig_params, direction)]
-                # ut.set_params(params, final_params)
+                ut.update_parameters_no_grad(params, step_size, orig_params, direction)
 
                 new_loss = closure()
 
                 if new_loss > loss:
                     ut.set_params(params, orig_params)
 
+                if self.state['device'] == 'mps':
+                    del direction, orig_params, loss_l, loss_r
+                    torch.mps.empty_cache()
+                elif self.state['device'] == 'cuda':
+                    del direction, orig_params, loss_l, loss_r
+                    torch.cuda.empty_cache()
+
         end_time = time.time()
         self.state['execution_time'] = end_time - start_time
         return loss
-
-
-
-
-
-
-
-
-
