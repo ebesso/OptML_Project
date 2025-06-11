@@ -8,9 +8,10 @@ class RDLSOptimizer(Optimizer):
     def __init__(
             self,
             params,
-            initial_interval=10,
+            initial_interval=1,
             max_step_size=0.05,
-            tolerance=1e-3):
+            tolerance=1e-3,
+            max_iterations=100):
 
         defaults = dict(
             initial_interval=initial_interval,
@@ -63,7 +64,10 @@ class RDLSOptimizer(Optimizer):
                 # ut.set_params(params, params_r)
                 loss_r = closure().item()
 
-                while b - a > group["tolerance"]:
+                j = 0
+
+                while b - a > group["tolerance"] and j < group["max_iterations"]:
+                    j += 1
                     if loss_l > loss_r:
                         a = l
                         l = r
@@ -85,18 +89,18 @@ class RDLSOptimizer(Optimizer):
                         loss_l = closure().item()
                         self.state['function_evaluations'] += 1
 
-                    step_size = (b + a) / 2
-                    self.state['step_size'] = step_size
+                step_size = (b + a) / 2
+                self.state['step_size'] = step_size
 
-                    ut.update_parameters(params, step_size, orig_params, direction)
+                ut.update_parameters(params, step_size, orig_params, direction)
 
-                    # final_params = [p + step_size * d for p, d in zip(orig_params, direction)]
-                    # ut.set_params(params, final_params)
+                # final_params = [p + step_size * d for p, d in zip(orig_params, direction)]
+                # ut.set_params(params, final_params)
 
-                    new_loss = closure()
+                new_loss = closure()
 
-                    if new_loss > loss:
-                        ut.set_params(params, orig_params)
+                if new_loss > loss:
+                    ut.set_params(params, orig_params)
 
         end_time = time.time()
         self.state['execution_time'] = end_time - start_time
