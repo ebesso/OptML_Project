@@ -2,7 +2,7 @@ from torch.utils.tensorboard import SummaryWriter
 from loader import load
 import argparse, time, json
 import torch
-from model import ResNet18, ResNet34 
+from model import ResNet18, ResNet34, TinyCNN_model 
 from optimizer.sls_optimizer import SLSOptimizer
 from optimizer.rdls_optimizer import RDLSOptimizer
 from optimizer.baseline_optimizer import BaseLineOptimizer
@@ -35,6 +35,8 @@ def run(config, writer):
         model = ResNet18()
     elif config['model'] == 'resnet34':
         model = ResNet34()
+    elif config['model'] == 'tiny_cnn':
+        model = TinyCNN_model(10)
     else:
         raise ValueError(f"Unsupported model: {config['model']}")
 
