@@ -20,6 +20,8 @@ class BaseLineOptimizer(Optimizer):
         self.state['execution_time'] = 0
 
     def step(self, closure):
+        self.state["function_evaluations"] = 0
+        self.state["gradient_evaluations"] = 0
         start_time = time.time()
         loss = None
         if closure is not None:
@@ -38,5 +40,5 @@ class BaseLineOptimizer(Optimizer):
 
             self.state["step_size"] = step_size
 
-        self.state['execution_time'] += time.time() - start_time
+        self.state['execution_time'] = time.time() - start_time
         return loss
