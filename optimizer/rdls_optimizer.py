@@ -16,7 +16,8 @@ class RDLSOptimizer(Optimizer):
         defaults = dict(
             initial_interval=initial_interval,
             max_step_size=max_step_size,
-            tolerance=tolerance
+            tolerance=tolerance,
+            max_iterations=max_iterations
             )
 
         super().__init__(params, defaults)
