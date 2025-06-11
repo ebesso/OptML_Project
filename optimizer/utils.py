@@ -308,9 +308,11 @@ def get_random_direction(params):
             rand = torch.randn_like(p, device='cpu') 
             direction.append(rand)
 
-        norm = torch.sqrt(sum((d**2).sum() for d in direction))
-        return [d / norm for d in direction]
+        #norm = torch.sqrt(sum((d**2).sum() for d in direction))
+        #return [d / norm for d in direction]
+        return direction
 
+## NOT USED??
 def update_random_direction(direction):
     with torch.no_grad():
         for i in range(len(direction)):
@@ -324,8 +326,6 @@ def is_concave(polynomial):
     return polynomial[0] < 0
 
 
-
-## NOT USED??
 def get_polynomial(point1, point2, point3):
     x0, y0 = point1
     x1, y1 = point2
