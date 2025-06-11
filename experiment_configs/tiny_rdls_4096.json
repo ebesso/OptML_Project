@@ -1,0 +1,13 @@
+{
+    "name": "tiny_rdls_4096",
+    "batch_size": 4096,
+    "num_epochs": 100,
+    "dataset": "cifar10",
+    "model": "tiny_cnn",
+    "optimizer": {
+        "name": "rdls",
+        "line_search_fn": "golden_section",
+        "initial_interval": 1,
+        "tolerance": 0.001
+    }    
+}

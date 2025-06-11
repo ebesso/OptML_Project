@@ -1,12 +1,12 @@
 {
-    "name": "cifar_resnet18_goldstein",
+    "name": "resnet18_strongwolfe",
     "batch_size": 256,
-    "num_epochs": 50,
+    "num_epochs": 100,
     "dataset": "cifar10",
     "model": "resnet18",
     "optimizer": {
         "name": "sls",
-        "line_search_fn": "goldstein",
+        "line_search_fn": "strong_wolfe",
         "initial_step_size": 1,
         "max_step_size": 10,
         "reset_option": 2,

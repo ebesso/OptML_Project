@@ -1,9 +1,9 @@
 {
-    "name": "cifar_resnet34_rdls",
-    "batch_size": 4096,
-    "num_epochs": 50,
+    "name": "tiny_rdls_512",
+    "batch_size": 512,
+    "num_epochs": 100,
     "dataset": "cifar10",
-    "model": "resnet34",
+    "model": "tiny_cnn",
     "optimizer": {
         "name": "rdls",
         "line_search_fn": "golden_section",

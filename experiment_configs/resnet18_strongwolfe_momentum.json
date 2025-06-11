@@ -1,12 +1,12 @@
 {
-    "name": "cifar_resnet34_goldstein",
+    "name": "resnet18_strongwolfe_momentum",
     "batch_size": 256,
-    "num_epochs": 50,
+    "num_epochs": 100,
     "dataset": "cifar10",
-    "model": "resnet34",
+    "model": "resnet18",
     "optimizer": {
         "name": "sls",
-        "line_search_fn": "goldstein",
+        "line_search_fn": "strong_wolfe",
         "initial_step_size": 1,
         "max_step_size": 10,
         "reset_option": 2,
@@ -16,6 +16,6 @@
         "c2": 0.9,
         "beta_b": 0.9,
         "beta_f": 2.0,
-        "momentum": 0.0
+        "momentum": 0.2
     }    
 }

@@ -1,0 +1,21 @@
+{
+    "name": "resnet18_goldstein_momentum",
+    "batch_size": 256,
+    "num_epochs": 100,
+    "dataset": "cifar10",
+    "model": "resnet18",
+    "optimizer": {
+        "name": "sls",
+        "line_search_fn": "goldstein",
+        "initial_step_size": 1,
+        "max_step_size": 10,
+        "reset_option": 2,
+        "gamma": 2,
+        "max_iterations": 100,
+        "c1": 0.1,
+        "c2": 0.9,
+        "beta_b": 0.9,
+        "beta_f": 2.0,
+        "momentum": 0.2
+    }    
+}

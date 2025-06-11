@@ -1,12 +1,12 @@
 {
-    "name": "cifar_resnet34_armijo",
+    "name": "resnet18_goldstein",
     "batch_size": 256,
-    "num_epochs": 50,
+    "num_epochs": 100,
     "dataset": "cifar10",
-    "model": "resnet34",
+    "model": "resnet18",
     "optimizer": {
         "name": "sls",
-        "line_search_fn": "armijo",
+        "line_search_fn": "goldstein",
         "initial_step_size": 1,
         "max_step_size": 10,
         "reset_option": 2,
