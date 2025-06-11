@@ -1,7 +1,7 @@
 {
     "name": "tiny_baseline",
     "batch_size": 256,
-    "num_epochs": 100,
+    "num_epochs": 50,
     "dataset": "cifar10",
     "model": "tiny_cnn",
     "optimizer": {

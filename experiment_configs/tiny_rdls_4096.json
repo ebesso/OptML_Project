@@ -1,7 +1,7 @@
 {
     "name": "tiny_rdls_4096",
     "batch_size": 4096,
-    "num_epochs": 100,
+    "num_epochs": 50,
     "dataset": "cifar10",
     "model": "tiny_cnn",
     "optimizer": {

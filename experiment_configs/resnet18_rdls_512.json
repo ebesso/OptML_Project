@@ -1,7 +1,7 @@
 {
     "name": "resnet18_rdls_512",
     "batch_size": 512,
-    "num_epochs": 100,
+    "num_epochs": 50,
     "dataset": "cifar10",
     "model": "resnet18",
     "optimizer": {
