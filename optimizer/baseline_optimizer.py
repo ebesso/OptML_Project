@@ -9,11 +9,17 @@ class BaseLineOptimizer(Optimizer):
             params,
             learning_rate=0.01
             ):
+        """
+        Initializes the BaseLineOptimizer.
 
+        Args:
+            params: Iterable of parameters to optimize or dicts defining parameter groups.
+            learning_rate (float, optional): Learning rate for the optimizer. Default is 0.01.
+        """
         defaults = dict(learning_rate=learning_rate)
-
         super().__init__(params, defaults)
 
+        # Initialize optimizer state variables
         self.state["function_evaluations"] = 0
         self.state["gradient_evaluations"] = 0
         self.state['step_size'] = 0

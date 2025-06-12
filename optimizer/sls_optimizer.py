@@ -26,21 +26,22 @@ class SLSOptimizer(Optimizer):
         Initialize the SLS optimizer.
         Args:
             params (iterable): Parameters to optimize or dicts defining parameter groups.
-            line_search_fn (str): Line search function to use.
+            line_search_fn (str): Line search function to use ('armijo', 'goldstein', or 'strong_wolfe').
 
             initial_step_size (float): Initial step size for the optimizer.
-            max_step_size (float): Maximum step size.
-            reset_option (int): Option for resetting the step size.
-            gamma (float): Factor for resetting the step size.
+            max_step_size (float): Maximum step size allowed during line search.
+            reset_option (int): Option for resetting the step size after each step.
+            gamma (float): Multiplicative factor for resetting the step size.
 
             max_iterations (int): Maximum number of iterations for the line search.
-            n_batches_per_epoch (int): Number of batches per epoch.
+            n_batches_per_epoch (int): Number of batches per epoch, used for step size scheduling.
 
-            c1 (float): Constant for the Armijo and Goldstein condition, 0 < c1 < c2, typical [1e-4, 1e-1]
-            c2 (float): Constant for Strong Wolfe curvature condition, c1 < c2 < 1, typical 0.9
+            c1 (float): Constant for the Armijo and Goldstein conditions, 0 < c1 < c2.
+            c2 (float): Constant for the Strong Wolfe curvature condition, c1 < c2 < 1.
 
             beta_b (float): Decay factor for the step size in Armijo condition.
-            beta_f (float): Increase factor for the step size in Goldstein condition.            
+            beta_f (float): Increase factor for the step size in Goldstein condition.
+            momentum (float): Momentum factor for Polyak momentum (default: 0.0).
         """
         
         defaults = dict(initial_step_size=initial_step_size,
@@ -87,14 +88,15 @@ class SLSOptimizer(Optimizer):
         for group in self.param_groups:
             params = group["params"]
 
+            # Get original parameters and the gradient
             orig_params = ut.copy_parameters(params)
             grad = ut.get_gradient(params)
             grad_norm = ut.get_grad_norm(grad)
 
-            # Normalized direction
+            # Search direction
             direction = [-g for g in grad]
 
-            # Calculate derivative of line search function at the current point
+            # Calculate directional derivative of line search function at the current point
             loss_prime = sum((d * g).sum() for d, g in zip(direction, grad) if d is not None and g is not None)
 
             step_size = self.state["step_size"]

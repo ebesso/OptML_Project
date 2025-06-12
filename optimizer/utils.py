@@ -11,6 +11,7 @@ def reset_step(step_size, max_step_size=None, gamma=None, reset_option=2, n_batc
         gamma (float, optional): The increase factor for the step size. Defaults to None.
         reset_option (int, optional): The reset option. Defaults to 1.
         n_batches_per_epoch (int, optional): The number of batches per epoch. Defaults to None.
+        initial_step_size (float): The initial step size
 
     Returns:
         float: The reseted step size.
@@ -46,7 +47,8 @@ def armijo_line_search(line_fn, orig_loss, orig_loss_prime, step_size, group):
         step_size (float): The initial step size.
         group (dict): A dictionary containing parameters for the line search.
         Returns:
-        tuple: A tuple containing the step size, number of function evaluations, and a boolean indicating success.'''
+        tuple: A tuple containing a boolean indicating success, the step size, number of function evaluations and number of gradient evalutations.
+    '''
     func_evals = 0
     grad_evals = 0
     
@@ -71,7 +73,8 @@ def goldstein_line_search(line_fn, orig_loss, orig_loss_prime, step_size, group)
         step_size (float): The initial step size.
         group (dict): A dictionary containing parameters for the line search.
     Returns:
-        tuple: A tuple containing the step size, number of function evaluations, and a boolean indicating success.'''
+        tuple: A tuple containing a boolean indicating success, the step size, number of function evaluations and number of gradient evalutations.
+    '''
     
     func_evals = 0
     grad_evals = 0
@@ -112,9 +115,6 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
 
     # definie function which outputs directional derivative
     def line_fn_deriv(loss):
-    #    loss.backward()
-    #    new_grad = get_gradient(params)
-    #    return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
         grads = torch.autograd.grad(loss, params, create_graph=False, retain_graph=True, allow_unused=True)
         return sum(
             torch.dot(d.view(-1), g.view(-1))
@@ -150,9 +150,6 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
         new_loss_prime = line_fn_deriv(new_loss)
         grad_evals += 1
 
-        # if abs(new_loss_prime) > abs(orig_loss_prime) * group["c2"]:
-            # print(f'new_loss_prime: {new_loss_prime}, orig_loss_prime: {orig_loss_prime}')
-
         if abs(new_loss_prime) <= group["c2"]*abs(orig_loss_prime):
             return True, alpha, func_evals, grad_evals
         
@@ -175,7 +172,6 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
         alpha_prev = alpha
         prev_loss = new_loss
 
-        # alpha = (alpha + group["max_step_size"]) / 2 
         alpha = min(alpha * group["beta_f"], group["max_step_size"])
     
     return False, alpha, func_evals, grad_evals
@@ -185,12 +181,8 @@ def zoom(line_fn, params, alpha_lo, loss_lo, alpha_hi, loss_hi, orig_loss, orig_
     func_evals = 0
     grad_evals = 0
 
-    
     # definie function which outputs directional derivative
     def line_fn_deriv(loss):
-    #    loss.backward()
-    #    new_grad = get_gradient(params)
-    #    return sum(torch.dot(d.view(-1), g.view(-1)) for d, g in zip(direction, new_grad) if d is not None and g is not None)
         grads = torch.autograd.grad(loss, params, create_graph=False, retain_graph=True, allow_unused=True)
         return sum(
             torch.dot(d.view(-1), g.view(-1))
@@ -200,8 +192,6 @@ def zoom(line_fn, params, alpha_lo, loss_lo, alpha_hi, loss_hi, orig_loss, orig_
     
     for _ in range(50):
         # Interpolate (using quadratic, cubic, or bisection) to find a trial step length alpha between alpha_lo and alpha_hi;
-        #cubic (HERE WE REQUIRE loss_hi and possible derivative at alpha_lo and alpha_hi)
-
         #bisection
         alpha = (alpha_lo + alpha_hi) / 2
 
@@ -215,10 +205,6 @@ def zoom(line_fn, params, alpha_lo, loss_lo, alpha_hi, loss_hi, orig_loss, orig_
             # evalute directional derivative
             new_loss_prime = line_fn_deriv(new_loss)
             grad_evals += 1
-            
-            if abs(new_loss_prime) > abs(orig_loss_prime) * group["c2"]:
-                pass
-                # print(f'new_loss_prime: {new_loss_prime}, orig_loss_prime: {orig_loss_prime}')
 
             if abs(new_loss_prime) <= group["c2"]*abs(orig_loss_prime):
                 return True, alpha, func_evals, grad_evals
@@ -246,19 +232,6 @@ def copy_parameters(params):
 
 def update_parameters(params, step_size, original_params, direction):
     update_parameters_no_grad(params, step_size, original_params, direction)
-
-    """
-    Update parameters by adding a scaled direction to the original parameters.
-    
-    Args:
-        params (list): List of tensors to update.
-        step_size (float): The step size to scale the direction.
-        original_params (list): List of original tensors to use as base.
-        direction (list): List of tensors representing the direction to update. If an entry in `direction` is `None`, the corresponding parameter will not be updated.
-    """
-    # for p_next, p_orig, d in zip(params, original_params, direction):
-    #     if d is not None:
-    #         p_next.data = p_orig + step_size * d
 
 def update_parameters_no_grad(params, step_size, original_params, direction):
     """
@@ -318,8 +291,6 @@ def get_random_direction(params):
             rand = torch.randn_like(p, device='cpu') 
             direction.append(rand)
 
-        #norm = torch.sqrt(sum((d**2).sum() for d in direction))
-        #return [d / norm for d in direction]
         return direction
 
 ## NOT USED??
