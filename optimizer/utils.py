@@ -150,6 +150,9 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
         new_loss_prime = line_fn_deriv(new_loss)
         grad_evals += 1
 
+        # if abs(new_loss_prime) > abs(orig_loss_prime) * group["c2"]:
+            # print(f'new_loss_prime: {new_loss_prime}, orig_loss_prime: {orig_loss_prime}')
+
         if abs(new_loss_prime) <= group["c2"]*abs(orig_loss_prime):
             return True, alpha, func_evals, grad_evals
         
@@ -172,7 +175,8 @@ def strong_wolfe_line_search(line_fn, params, orig_loss, orig_loss_prime, step_s
         alpha_prev = alpha
         prev_loss = new_loss
 
-        alpha = (alpha + group["max_step_size"]) / 2 # alpha * group["beta_f"] 
+        # alpha = (alpha + group["max_step_size"]) / 2 
+        alpha = min(alpha * group["beta_f"], group["max_step_size"])
     
     return False, alpha, func_evals, grad_evals
 
@@ -212,6 +216,10 @@ def zoom(line_fn, params, alpha_lo, loss_lo, alpha_hi, loss_hi, orig_loss, orig_
             new_loss_prime = line_fn_deriv(new_loss)
             grad_evals += 1
             
+            if abs(new_loss_prime) > abs(orig_loss_prime) * group["c2"]:
+                pass
+                # print(f'new_loss_prime: {new_loss_prime}, orig_loss_prime: {orig_loss_prime}')
+
             if abs(new_loss_prime) <= group["c2"]*abs(orig_loss_prime):
                 return True, alpha, func_evals, grad_evals
             
@@ -237,6 +245,8 @@ def copy_parameters(params):
     return [p.detach().clone() for p in params]
 
 def update_parameters(params, step_size, original_params, direction):
+    update_parameters_no_grad(params, step_size, original_params, direction)
+
     """
     Update parameters by adding a scaled direction to the original parameters.
     
@@ -246,9 +256,9 @@ def update_parameters(params, step_size, original_params, direction):
         original_params (list): List of original tensors to use as base.
         direction (list): List of tensors representing the direction to update. If an entry in `direction` is `None`, the corresponding parameter will not be updated.
     """
-    for p_next, p_orig, d in zip(params, original_params, direction):
-        if d is not None:
-            p_next.data = p_orig + step_size * d
+    # for p_next, p_orig, d in zip(params, original_params, direction):
+    #     if d is not None:
+    #         p_next.data = p_orig + step_size * d
 
 def update_parameters_no_grad(params, step_size, original_params, direction):
     """

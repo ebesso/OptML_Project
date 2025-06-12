@@ -110,10 +110,11 @@ class SLSOptimizer(Optimizer):
                 found = False
                 def line_fn(step_size):
                     # Update parameters
-                    ut.update_parameters(params=params, 
+                    ut.update_parameters_no_grad(params=params, 
                                          step_size=step_size, 
                                          original_params=orig_params, 
                                          direction=direction)
+                    self.zero_grad()
                     return closure()
                 
                 # Perform armijo line search
@@ -159,7 +160,7 @@ class SLSOptimizer(Optimizer):
 
                 if not found:
                     # If no step size found, revert to original parameters
-                    ut.update_parameters(params, 1e-6, orig_params, direction)
+                    ut.update_parameters_no_grad(params, 1e-6, orig_params, direction)
                     
             momentum = group.get("momentum", 0.0)
             if momentum > 0:

@@ -13,7 +13,7 @@
         "gamma": 2,
         "max_iterations": 100,
         "c1": 0.1,
-        "c2": 0.9,
+        "c2": 0.6,
         "beta_b": 0.9,
         "beta_f": 2.0,
         "momentum": 0.0
