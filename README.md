@@ -44,8 +44,11 @@ tensorboard --logdir=runs
 
 ## Plots
 
+Before generating plots, make sure the file paths are correctly set in `plots.py` to your experiments.
+
 Run 
 ```bash
 python plots.py
 ```
+
 to generate the plots. 

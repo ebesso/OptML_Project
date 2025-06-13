@@ -11,7 +11,8 @@ plot_dir = "experiment_plots"
 os.makedirs(plot_dir, exist_ok=True)
 
 # Dictionary of labels and their corresponding subdirectories
-#Change the log directories as per your experiments
+
+# Change the log directories as per your experiments. These directories should contain the TensorBoard event files.
 log_dirs_18 = [
     'resnet18_baseline-20250612-210627',
     'resnet18_armijo-20250612-222046',
@@ -22,6 +23,7 @@ log_dirs_18 = [
     'resnet18_strongwolfe_momentum-20250613-001721'
 ]
 
+# Change the log directories as per your experiments. These directories should contain the TensorBoard event files.
 log_dirs_34 = [
     'resnet34_baseline-20250612-200509',
     'resnet34_armijo-20250613-012115',
@@ -33,11 +35,13 @@ log_dirs_34 = [
 ]
 
 
+# Change the log directories as per your experiments. These directories should contain the TensorBoard event files.
 log_dirs_rdls_tiny = [
     'tiny_baseline-20250612-031215',
     'tiny_rdls-20250612-002529'
 ]
 
+# Change the log directories as per your experiments. These directories should contain the TensorBoard event files.
 log_dirs_rdls_resnet = [
     'RDLS_resnet18-20250612-070230',
     'RDLS_resnet34-20250612-052443'
