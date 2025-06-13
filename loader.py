@@ -3,6 +3,15 @@ from torchvision import datasets, transforms
 import numpy as np
 
 def load(batch_size=64, val_split=0.2, seed = 1, dataset='cifar10'):
+    """Load datasets and return DataLoaders for training, validation, and testing.
+    Args:
+        batch_size (int): Batch size for DataLoader.
+        val_split (float): Proportion of the training set to use for validation.
+        seed (int): Random seed for reproducibility.
+        dataset (str): Dataset to load ('cifar10' or 'fashion').
+    Returns:
+        tuple: DataLoaders for training, validation, and testing datasets.
+    """
     
     np.random.seed(seed) # Necessary for reproducabiliity
 

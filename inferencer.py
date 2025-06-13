@@ -10,7 +10,7 @@ def infer(model, test_loader, criterion, device):
         criterion: Loss function.
     
     Returns:
-        None
+        Tuple containing average loss and accuracy on the test set. 
     """
     model.eval()
     running_loss = 0.0

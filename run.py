@@ -13,6 +13,13 @@ import os
 
 
 def load_configuration(config_name):
+    """Load the configuration from a JSON file.
+    Args:
+        config_name (str): Name of the configuration file (without extension).
+    Returns:
+        dict: Configuration parameters.
+    Raises:
+        FileNotFoundError: If the configuration file does not exist."""
     config_path = f"experiment_configs/{config_name}.json"
     try:
         with open(config_path, 'r') as file:
@@ -22,6 +29,12 @@ def load_configuration(config_name):
         raise FileNotFoundError(f"Configuration file '{config_path}' not found.")
 
 def run(config, writer):
+    """Run the experiment with the given configuration.
+    Args:
+        config (dict): Configuration parameters.
+        writer (SummaryWriter): TensorBoard writer for logging.
+    """
+    print(f"Running experiment with configuration: {config['name']}")
     train_loader, val_loader, test_loader = load(batch_size=config["batch_size"], dataset=config['dataset'])
 
     # Set device

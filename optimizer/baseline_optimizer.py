@@ -4,6 +4,7 @@ import time
 from . import utils as ut
 
 class BaseLineOptimizer(Optimizer):
+    """A baseline optimizer that implements a simple gradient descent algorithm."""
     def __init__(
             self,
             params,

@@ -231,6 +231,7 @@ def copy_parameters(params):
     return [p.detach().clone() for p in params]
 
 def update_parameters(params, step_size, original_params, direction):
+    # Ugly hack to avoid changing the original function signature
     update_parameters_no_grad(params, step_size, original_params, direction)
 
 def update_parameters_no_grad(params, step_size, original_params, direction):
@@ -285,6 +286,12 @@ def get_grad_norm(grad):
     return torch.norm(torch.cat([g.view(-1) for g in grad if g is not None]))
 
 def get_random_direction(params):
+    """ Generate a random direction for each parameter tensor from a standard Gaussian distribution.
+    Args:
+        params (list): List of tensors representing the model parameters.
+    Returns:
+        list: A list of tensors with the same shape as the parameters, filled with random values.
+    """
     with torch.no_grad():
         direction = []
         for p in params:
@@ -292,48 +299,3 @@ def get_random_direction(params):
             direction.append(rand)
 
         return direction
-
-## NOT USED??
-def update_random_direction(direction):
-    with torch.no_grad():
-        for i in range(len(direction)):
-            rand = torch.randn_like(direction[i])
-            direction[i] = rand
-
-        norm = torch.sqrt(sum((d**2).sum() for d in direction))
-        return [d / norm for d in direction]
-
-def is_concave(polynomial):
-    return polynomial[0] < 0
-
-
-def get_polynomial(point1, point2, point3):
-    x0, y0 = point1
-    x1, y1 = point2
-    x2, y2 = point3
-
-    return np.polyfit([x0, x1, x2], [y0, y1, y2], deg=2)
-
-
-# Find minima on the interval [-max_step_size, max_step_size]
-def get_minima(poly, max_step_size):
-
-    critical_point = - poly[1] / (2 * poly[0])
-
-    evaluate_polynomal = lambda x: sum([p * x ** (len(poly) - i - 1) for i, p in enumerate(poly)])
-
-    if(abs(critical_point) < max_step_size):
-        if evaluate_polynomal(-max_step_size) < min(evaluate_polynomal(critical_point), evaluate_polynomal(max_step_size)):
-            return -max_step_size
-        
-        if evaluate_polynomal(max_step_size) < min(evaluate_polynomal(critical_point), evaluate_polynomal(-max_step_size)):
-            return max_step_size
-        
-        return critical_point
-
-    if evaluate_polynomal(-max_step_size) < evaluate_polynomal(max_step_size):
-        return -max_step_size
-
-    return max_step_size
-
-
