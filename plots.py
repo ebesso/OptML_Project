@@ -3,31 +3,55 @@ import matplotlib.pyplot as plt
 from tensorboard.backend.event_processing import event_accumulator
 
 # Base directory where all logs are stored
-base_log_dir = "runs_06_11"
+base_log_dir = "runs_06_13"
+
+# Output directory for saving plots
+plot_dir = "experiment_plots"
+os.makedirs(plot_dir, exist_ok=True)
 
 # Dictionary of labels and their corresponding subdirectories
-log_dirs_18 = {
-    'cifar_resnet18_baseline-20250610-231336',
-    'cifar_resnet18_armijo-20250611-011647',
-    'cifar_resnet18_goldstein-20250610-233428',
-    'cifar_resnet18_strongwolfe-20250611-014020',
-}
+#Change the log directories as per your experiments
+log_dirs_18 = [
+    'resnet18_baseline-20250612-210627',
+    'resnet18_armijo-20250612-222046',
+    'resnet18_armijo_momentum-20250612-235349',
+    'resnet18_goldstein-20250612-212706',
+    'resnet18_goldstein_momentum-20250612-233015',
+    'resnet18_strongwolfe-20250612-215034',
+    'resnet18_strongwolfe_momentum-20250613-001721'
+]
 
-log_dirs_34 = {
-    'cifar_resnet34_baseline-20250610-224506',
-    'cifar_resnet34_armijo-20250611-021030',
-    'cifar_resnet34_goldstein-20250610-235807',
-    'cifar_resnet34_strongwolfe-20250611-003131'               
-}
+log_dirs_34 = [
+    'resnet34_baseline-20250612-200509',
+    'resnet34_armijo-20250613-012115',
+    'resnet34_armijo_momentum-20250612-193127',
+    'resnet34_goldstein-20250612-203316',
+    'resnet34_goldstein_momentum-20250613-004744',
+    'resnet34_strongwolfe-20250612-184451',
+    'resnet34_strongwolfe_momentum-20250612-224404'               
+]
+
+
+log_dirs_rdls_tiny = [
+    'tiny_baseline-20250612-031215',
+    'tiny_rdls-20250612-002529'
+]
+
+# Change the names of the run folders for resnet18_rdls and resnet34_rdls to match this structure (Useful for the labels in the plots)
+log_dirs_rdls_resnet = [
+    'RDLS_resnet18-20250612-070230',
+    'RDLS_resnet34-20250612-052443'
+]
+
 
 # Plots of the validation accuracy for resnet18 
 plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_18:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+
+    label_part = sub_dir.split('resnet18_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Accuracy/Validation'
@@ -41,41 +65,14 @@ for sub_dir in log_dirs_18:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.title('Validation/Accuracy for resnet18')
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Accuracy', fontsize = 22)
+plt.title('Validation/Accuracy for SLS on ResNet18 (%)', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
-
-# Plots of the average execution time for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Average Execution Time'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Average Execution Time')
-plt.title('Average Execution Time for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet18_validation_accuracy.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
 # Plots of the average function evaluations for resnet18 
@@ -83,9 +80,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_18:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+
+    label_part = sub_dir.split('resnet18_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Average Function Evaluations'
@@ -99,41 +96,14 @@ for sub_dir in log_dirs_18:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Average Function Evaluations')
-plt.title('Average Function Evaluations for resnet18')
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Function Evaluations', fontsize = 22)
+plt.title('Average Function Evaluations for SLS on ResNet18', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
-
-# Plots of the Average Gradient Evaluations for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Average Gradient Evaluations'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Average Gradient Evaluations')
-plt.title('Average Gradient Evaluations for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet18_avg_funceval.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
 # Plots of the average step size for resnet18 
@@ -141,9 +111,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_18:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+
+    label_part = sub_dir.split('resnet18_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Average Step Size'
@@ -157,12 +127,14 @@ for sub_dir in log_dirs_18:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Average Step Size')
-plt.title('Average Step Size for resnet18')
-plt.legend(loc='lower right', fontsize=15)
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Step Size', fontsize = 22)
+plt.title('Average Step Size for SLS on ResNet18', fontsize = 15)
+plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet18_avg_step.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
 # Plots of the Average Train Loss for resnet18 
@@ -170,9 +142,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_18:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('resnet18_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Average Train Loss'
@@ -186,158 +158,16 @@ for sub_dir in log_dirs_18:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Average Train Loss')
-plt.title('Average Train Loss for resnet18')
-plt.legend(loc='lower right', fontsize=15)
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Train Loss', fontsize = 22)
+plt.title('Average Train Loss for SLS on ResNet18', fontsize = 15)
+plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet18_avg_trainloss.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
-# Plots of the Execution Time for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Execution Time'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Execution Time')
-plt.title('Execution Time for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-# Plots of the Function Evaluations for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Function Evaluations'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Function Evaluations')
-plt.title('Function Evaluations for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-# Plots of the Gradient Evaluations for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Gradient Evaluations'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Gradient Evaluations')
-plt.title('Gradient Evaluations for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-# Plots of the Loss/Validation for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Loss/Validation'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Loss/Validation')
-plt.title('Loss/Validation for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-# Plots of the Step Size for resnet18 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_18:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Step Size'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Step Size')
-plt.title('Step Size for resnet18')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
 
 #############
 
@@ -352,9 +182,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_34:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('resnet34_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Accuracy/Validation'
@@ -368,41 +198,14 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.title('Validation/Accuracy for resnet34')
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Accuracy', fontsize = 22)
+plt.title('Validation/Accuracy for SLS on ResNet34 (%)', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
-
-# Plots of the average execution time for resnet34 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Average Execution Time'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Average Execution Time')
-plt.title('Average Execution Time for resne34')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet34_validation_accuracy.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
 # Plots of the average function evaluations for resnet34 
@@ -410,9 +213,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_34:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('resnet34_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Average Function Evaluations'
@@ -426,41 +229,14 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Average Function Evaluations')
-plt.title('Average Function Evaluations for resnet34')
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Function Evaluations', fontsize = 22)
+plt.title('Average Function Evaluations for SLS on ResNet34', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
-
-# Plots of the Average Gradient Evaluations for resnet34 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Average Gradient Evaluations'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Average Gradient Evaluations')
-plt.title('Average Gradient Evaluations for resnet34')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet34_avg_funceval.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
 # Plots of the average step size for resnet34 
@@ -468,9 +244,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_34:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('resnet34_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Average Step Size'
@@ -484,12 +260,14 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Average Step Size')
-plt.title('Average Step Size for resnet34')
-plt.legend(loc='lower right', fontsize=15)
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Step Size', fontsize = 22)
+plt.title('Average Step Size for SLS on ResNet34', fontsize = 15)
+plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet34_avg_stepsize.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
 # Plots of the Average Train Loss for resnet34 
@@ -497,9 +275,9 @@ plt.figure(figsize=(14, 7))
 for sub_dir in log_dirs_34:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('resnet34_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
         tag = 'Average Train Loss'
@@ -513,25 +291,37 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Average Train Loss')
-plt.title('Average Train Loss for resnet34')
-plt.legend(loc='lower right', fontsize=15)
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Train Loss', fontsize = 22)
+plt.title('Average Train Loss for SLS on ResNet34', fontsize = 15)
+plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
+plot_path = os.path.join(plot_dir, "resnet34_avg_trainloss.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
 plt.show()
 
-# Plots of the Execution Time for resnet34 
+
+#############
+
+
+
+#############
+
+#Plots for tiny rdls
+
+
+# Plots of the validation accuracy for tiny-CNN 
 plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
+for sub_dir in log_dirs_rdls_tiny:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+
+    label_part = sub_dir.split('tiny_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
-        tag = 'Execution Time'
+        tag = 'Accuracy/Validation'
         if tag in ea.Tags()['scalars']:
             events = ea.Scalars(tag)
             steps = [e.step for e in events]
@@ -542,25 +332,27 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Execution Time')
-plt.title('Execution Time for resnet34')
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Accuracy', fontsize = 22)
+plt.title('Validation/Accuracy for RDLS on Tiny-CNN (%)', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plot_path = os.path.join(plot_dir, "tinyRDLS_validation_accuracy.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+#plt.show()
 
-# Plots of the Function Evaluations for resnet34 
+# Plots of the Average Train Loss for tiny-CNN 
 plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
+for sub_dir in log_dirs_rdls_tiny:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('tiny_')[1].split('-')[0]
+    label = label_part.replace('_', ' + ').capitalize()
     try:
         ea.Reload()
-        tag = 'Function Evaluations'
+        tag = 'Average Train Loss'
         if tag in ea.Tags()['scalars']:
             events = ea.Scalars(tag)
             steps = [e.step for e in events]
@@ -571,25 +363,38 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Function Evaluations')
-plt.title('Function Evaluations for resnet34')
-plt.legend(loc='lower right', fontsize=15)
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Train Loss', fontsize = 22)
+plt.title('Average Train Loss for Tiny-CNN', fontsize = 15)
+plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plot_path = os.path.join(plot_dir, "tinyRDLS_avg_trainloss.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+#plt.show()
 
-# Plots of the Gradient Evaluations for resnet34 
+
+#############
+
+
+
+#############
+
+#Plots for rdls resnet
+
+
+
+# Plots of the validation accuracy for tiny-CNN 
 plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
+for sub_dir in log_dirs_rdls_resnet:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+
+    label_part = sub_dir.split('-')[0]
+    label = label_part.replace('_', ' on ')
     try:
         ea.Reload()
-        tag = 'Gradient Evaluations'
+        tag = 'Accuracy/Validation'
         if tag in ea.Tags()['scalars']:
             events = ea.Scalars(tag)
             steps = [e.step for e in events]
@@ -600,25 +405,27 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Gradient Evaluations')
-plt.title('Gradient Evaluations for resnet34')
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Accuracy', fontsize = 22)
+plt.title('Validation/Accuracy for RDLS on ResNet (%)', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plot_path = os.path.join(plot_dir, "resnetRDLS_validation_accuracy.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+#plt.show()
 
-# Plots of the Loss/Validation for resnet34 
+# Plots of the Average Train Loss for tiny-CNN 
 plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
+for sub_dir in log_dirs_rdls_resnet:
     full_path = os.path.join(base_log_dir, sub_dir)
     ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
+    
+    label_part = sub_dir.split('-')[0]
+    label = label_part.replace('_', ' on ')
     try:
         ea.Reload()
-        tag = 'Loss/Validation'
+        tag = 'Average Train Loss'
         if tag in ea.Tags()['scalars']:
             events = ea.Scalars(tag)
             steps = [e.step for e in events]
@@ -629,40 +436,12 @@ for sub_dir in log_dirs_34:
     except Exception as e:
         print(f" Error reading from {full_path}: {e}")
 
-plt.xlabel('Epochs')
-plt.ylabel('Loss/Validation')
-plt.title('Loss/Validation for resnet34')
-plt.legend(loc='lower right', fontsize=15)
+plt.xlabel('Epochs', fontsize = 22)
+plt.ylabel('Average Train Loss', fontsize = 22)
+plt.title('Average Train Loss for RDLS on ResNet', fontsize = 15)
+plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
-
-# Plots of the Step Size for resnet34 
-plt.figure(figsize=(14, 7))
-for sub_dir in log_dirs_34:
-    full_path = os.path.join(base_log_dir, sub_dir)
-    ea = event_accumulator.EventAccumulator(full_path)
-    label = sub_dir.split('-')[0] 
-    label = label.split('_')[2]
-    label = label.capitalize()
-    try:
-        ea.Reload()
-        tag = 'Step Size'
-        if tag in ea.Tags()['scalars']:
-            events = ea.Scalars(tag)
-            steps = [e.step for e in events]
-            values = [e.value for e in events]
-            plt.plot(steps, values, label = label)
-        else:
-            print(f" Tag '{tag}' not found ")
-    except Exception as e:
-        print(f" Error reading from {full_path}: {e}")
-
-plt.xlabel('Epochs')
-plt.ylabel('Step Size')
-plt.title('Step Size for resnet34')
-plt.legend(loc='lower right', fontsize=15)
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
+plot_path = os.path.join(plot_dir, "resnetRDLS_avg_trainloss.png")
+plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+#plt.show()
