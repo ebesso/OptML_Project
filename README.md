@@ -41,3 +41,11 @@ The result of the experiments are logged using tensorboard and saved in the `run
 ```bash
 tensorboard --logdir=runs 
 ```
+
+## Plots
+
+Run 
+```bash
+python plots.py
+```
+to generate the plots.
