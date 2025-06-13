@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 from tensorboard.backend.event_processing import event_accumulator
 
 # Base directory where all logs are stored
-base_log_dir = "runs_06_13"
+# Change to "runs"
+base_log_dir = "runs"
 
 # Output directory for saving plots
 plot_dir = "experiment_plots"
@@ -37,7 +38,6 @@ log_dirs_rdls_tiny = [
     'tiny_rdls-20250612-002529'
 ]
 
-# Change the names of the run folders for resnet18_rdls and resnet34_rdls to match this structure (Useful for the labels in the plots)
 log_dirs_rdls_resnet = [
     'RDLS_resnet18-20250612-070230',
     'RDLS_resnet34-20250612-052443'
@@ -66,8 +66,7 @@ for sub_dir in log_dirs_18:
         print(f" Error reading from {full_path}: {e}")
 
 plt.xlabel('Epochs', fontsize = 22)
-plt.ylabel('Accuracy', fontsize = 22)
-plt.title('Validation/Accuracy for SLS on ResNet18 (%)', fontsize = 15)
+plt.ylabel('Accuracy (%)', fontsize = 22)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -98,7 +97,6 @@ for sub_dir in log_dirs_18:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Function Evaluations', fontsize = 22)
-plt.title('Average Function Evaluations for SLS on ResNet18', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -129,7 +127,6 @@ for sub_dir in log_dirs_18:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Step Size', fontsize = 22)
-plt.title('Average Step Size for SLS on ResNet18', fontsize = 15)
 plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -160,7 +157,6 @@ for sub_dir in log_dirs_18:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Train Loss', fontsize = 22)
-plt.title('Average Train Loss for SLS on ResNet18', fontsize = 15)
 plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -199,8 +195,7 @@ for sub_dir in log_dirs_34:
         print(f" Error reading from {full_path}: {e}")
 
 plt.xlabel('Epochs', fontsize = 22)
-plt.ylabel('Accuracy', fontsize = 22)
-plt.title('Validation/Accuracy for SLS on ResNet34 (%)', fontsize = 15)
+plt.ylabel('Accuracy (%)', fontsize = 22)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -231,7 +226,6 @@ for sub_dir in log_dirs_34:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Function Evaluations', fontsize = 22)
-plt.title('Average Function Evaluations for SLS on ResNet34', fontsize = 15)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -262,7 +256,6 @@ for sub_dir in log_dirs_34:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Step Size', fontsize = 22)
-plt.title('Average Step Size for SLS on ResNet34', fontsize = 15)
 plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -293,7 +286,6 @@ for sub_dir in log_dirs_34:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Train Loss', fontsize = 22)
-plt.title('Average Train Loss for SLS on ResNet34', fontsize = 15)
 plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
@@ -333,14 +325,13 @@ for sub_dir in log_dirs_rdls_tiny:
         print(f" Error reading from {full_path}: {e}")
 
 plt.xlabel('Epochs', fontsize = 22)
-plt.ylabel('Accuracy', fontsize = 22)
-plt.title('Validation/Accuracy for RDLS on Tiny-CNN (%)', fontsize = 15)
+plt.ylabel('Accuracy (%)', fontsize = 22)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
 plot_path = os.path.join(plot_dir, "tinyRDLS_validation_accuracy.png")
 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-#plt.show()
+plt.show()
 
 # Plots of the Average Train Loss for tiny-CNN 
 plt.figure(figsize=(14, 7))
@@ -365,13 +356,12 @@ for sub_dir in log_dirs_rdls_tiny:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Train Loss', fontsize = 22)
-plt.title('Average Train Loss for Tiny-CNN', fontsize = 15)
 plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
 plot_path = os.path.join(plot_dir, "tinyRDLS_avg_trainloss.png")
 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-#plt.show()
+plt.show()
 
 
 #############
@@ -406,14 +396,13 @@ for sub_dir in log_dirs_rdls_resnet:
         print(f" Error reading from {full_path}: {e}")
 
 plt.xlabel('Epochs', fontsize = 22)
-plt.ylabel('Accuracy', fontsize = 22)
-plt.title('Validation/Accuracy for RDLS on ResNet (%)', fontsize = 15)
+plt.ylabel('Accuracy (%)', fontsize = 22)
 plt.legend(loc='lower right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
 plot_path = os.path.join(plot_dir, "resnetRDLS_validation_accuracy.png")
 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-#plt.show()
+plt.show()
 
 # Plots of the Average Train Loss for tiny-CNN 
 plt.figure(figsize=(14, 7))
@@ -438,10 +427,9 @@ for sub_dir in log_dirs_rdls_resnet:
 
 plt.xlabel('Epochs', fontsize = 22)
 plt.ylabel('Average Train Loss', fontsize = 22)
-plt.title('Average Train Loss for RDLS on ResNet', fontsize = 15)
 plt.legend(loc='upper right', fontsize=15)
 plt.grid(True)
 plt.tight_layout()
 plot_path = os.path.join(plot_dir, "resnetRDLS_avg_trainloss.png")
 plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-#plt.show()
+plt.show()
